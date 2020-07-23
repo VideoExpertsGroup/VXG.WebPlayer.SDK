@@ -1,0 +1,651 @@
+<html>
+	<head>
+		<title>VXGCloudSDK-Web 3.0.18</title>
+		<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+		
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		<meta http-equiv="x-ua-compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+		<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+		<link rel="stylesheet" id="font-style-css" href="https://fonts.googleapis.com/css?family=Montserrat%3A400%2C700&amp;ver=4.7.6" type="text/css" media="all">
+		<link rel="stylesheet" type="text/css" href="css/index.css">
+
+		<script type="text/javascript" src="js/jquery-3.1.0.min.js"></script>
+		<script type="text/javascript" src="js/popper.min.js"></script>
+		<script type="text/javascript" src="js/bootstrap.min.js"></script>
+
+		
+    <!-- automaticly include: begin -->
+    <link rel="stylesheet" type="text/css" href="vxgwebsdk/videojs-5.18.3.min.css">
+    <link rel="stylesheet" type="text/css" href="vxgwebsdk/CloudSDK.min.css">
+    <script type="text/javascript" src="vxgwebsdk/videojs-5.18.3.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/videojs-contrib-hls.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/webrtc-adapter-latest.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/CloudSDK.min.js"></script>
+    <script type="text/javascript">
+	       CloudSDK.flashswf = "vxgwebsdk/video-js-by-vxg-buff200.swf";
+    </script>
+    <!-- automaticly include: end -->
+
+
+		<!-- Code Highlither -->
+		<link rel="stylesheet" href="CodeMirror/codemirror.css">
+		<link rel="stylesheet" href="CodeMirror/theme/ttcn.css">
+		<script src="CodeMirror/codemirror.js"></script>
+		<script src="CodeMirror/mode/javascript/javascript.js"></script>
+	</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light navbar-black navbar-toggleable-md  fixed-top">
+	<div class="container">
+	  <a class="navbar-brand" href="#"></a>
+	  <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navigation-menu" aria-controls="navigation-menu" aria-expanded="false" aria-label="Toggle navigation">
+		<span class="navbar-toggler-icon"></span>
+	  </button>
+	  <div class="navbar-collapse collapse" id="navigation-menu">
+		<ul class="navbar-nav ml-auto">
+			<li class="nav-item"><a class="nav-link" href="#sdk">VXGCloud SDK (3.0.18)</a></li>
+			<!-- li class="nav-item"><a class="nav-link" href="#docs">Docs</a></li -->
+			<li class="nav-item"><a class="nav-link" href="#examples">Examples</a></li>
+			<li class="nav-item"><a class="nav-link" href="#support">Support</a></li>
+			<li class="nav-item"><a class="nav-link" href="#changelog">Change Log</a></li>
+		</ul>
+	  </div>
+	</div>
+</nav>
+
+	<div class="container main-container">
+		
+		<a class="local-link-sdk" name="sdk">.</a>
+	
+		<div class="card">
+			<div class="card-body">
+				<h4 class="card-title">VXG Web SDK (3.0.18)</h4>
+				<div class="card-text">
+                    The VXG Web SDK is a part of VXG Cloud and VXG Server. It consists of JS, CSS and HTML scripts to help integrating an HTML5 Player with VXG Cloud and VXG Server.
+					<br>
+				</div>
+			</div>
+			<!-- div class="card-footer text-muted"></div -->
+		</div>
+		<br>
+		
+		<!-- a class="local-link-sdk" name="docs">.</a>
+		
+		<div class="card">
+			<div class="card-body">
+				<h4 class="card-title">Online documentation</h4>
+				<div class="card-text">
+					You can get more information in <a href="https://dashboard.videoexpertsgroup.com/docs/javascript/?snippet=startsdk">online documentation</a>.
+				</div>
+			</div>
+		</div>
+		<br -->
+		
+		<a class="local-link-sdk" name="support">.</a>
+		<div class="card">
+			<div class="card-body">
+				<h4 class="card-title">Support</h4>
+				<p class="card-text">Please contact us at: <a href="email:expert@videoexpertsgroup.com" target="_blank">expert@videoexpertsgroup.com</a></p>
+			</div>
+			<!-- div class="card-footer text-muted"></div -->
+		</div>
+
+		<a class="local-link-sdk" name="examples">.</a>
+		
+		<div class="card">
+			<div class="card-body">
+				<h4 class="card-title">Examples</h4>
+				<div class="card-text examples">
+					<div class="card" style="width: 320px; display: inline-block; margin-right: 15px; margin-bottom: 0px; vertical-align: top"><a class="card-img-top" href="example_cloudplayersdk1.html">	<img class="example-thumb" src="images/example_cloudplayersdk1_thumb.png" alt="Card image cap"></a>	<div class="card-body">		<h4 class="card-title">Example 1</h4>		<div class="card-text">			<p>Live Video</p>		</div>	</div></div><div class="card" style="width: 320px; display: inline-block; margin-right: 15px; margin-bottom: 0px; vertical-align: top"><a class="card-img-top" href="example_cloudplayersdk2.html">	<img class="example-thumb" src="images/example_cloudplayersdk2_thumb.png" alt="Card image cap"></a>	<div class="card-body">		<h4 class="card-title">Example 2</h4>		<div class="card-text">			<p>Live, Recorded and Timeline</p>		</div>	</div></div><div class="card" style="width: 320px; display: inline-block; margin-right: 15px; margin-bottom: 0px; vertical-align: top"><a class="card-img-top" href="example_cloudplayersdk3.html">	<img class="example-thumb" src="images/example_cloudplayersdk3_thumb.png" alt="Card image cap"></a>	<div class="card-body">		<h4 class="card-title">Example 3</h4>		<div class="card-text">			<p>Multi players</p>		</div>	</div></div><div class="card" style="width: 320px; display: inline-block; margin-right: 15px; margin-bottom: 0px; vertical-align: top"><a class="card-img-top" href="example_cloudplayersdk4.html">	<img class="example-thumb" src="images/example_cloudplayersdk4_thumb.png" alt="Card image cap"></a>	<div class="card-body">		<h4 class="card-title">Example 4</h4>		<div class="card-text">			<p>Default mute mode</p>		</div>	</div></div><div class="card" style="width: 320px; display: inline-block; margin-right: 15px; margin-bottom: 0px; vertical-align: top"><a class="card-img-top" href="example_cloudplayersdk5.html">	<img class="example-thumb" src="images/example_cloudplayersdk5_thumb.png" alt="Card image cap"></a>	<div class="card-body">		<h4 class="card-title">Example 5</h4>		<div class="card-text">			<p>Used only HLS protocol</p>		</div>	</div></div><div class="card" style="width: 320px; display: inline-block; margin-right: 15px; margin-bottom: 0px; vertical-align: top"><a class="card-img-top" href="example_cloudplayersdk6.html">	<img class="example-thumb" src="images/example_cloudplayersdk6_thumb.png" alt="Card image cap"></a>	<div class="card-body">		<h4 class="card-title">Example 6</h4>		<div class="card-text">			<p>Used only WebRTC protocol</p>		</div>	</div></div><div class="card" style="width: 320px; display: inline-block; margin-right: 15px; margin-bottom: 0px; vertical-align: top"><a class="card-img-top" href="example_cloudplayersdk7.html">	<img class="example-thumb" src="images/example_cloudplayersdk7_thumb.png" alt="Card image cap"></a>	<div class="card-body">		<h4 class="card-title">Example 7</h4>		<div class="card-text">			<p>Time Range</p>		</div>	</div></div><div class="card" style="width: 320px; display: inline-block; margin-right: 15px; margin-bottom: 0px; vertical-align: top"><a class="card-img-top" href="example_cloudplayersdk8.html">	<img class="example-thumb" src="images/example_cloudplayersdk8_thumb.png" alt="Card image cap"></a>	<div class="card-body">		<h4 class="card-title">Example 8</h4>		<div class="card-text">			<p>WebRTC+PTZ</p>		</div>	</div></div><div class="card" style="width: 320px; display: inline-block; margin-right: 15px; margin-bottom: 0px; vertical-align: top"><a class="card-img-top" href="example_cloudstreamersdk1.html">	<img class="example-thumb" src="images/example_cloudstreamersdk1_thumb.png" alt="Card image cap"></a>	<div class="card-body">		<h4 class="card-title">Example 9</h4>		<div class="card-text">			<p>Streamer</p>		</div>	</div></div>
+				</div>
+				<div class="card-text examples-only-webserver" style="display: none">
+					<strong>Warning:</strong>
+					We detected that you have launched the HTML page from a local file. Please place the package on your web server. You can run a web server on your local machine.
+				</div>
+				<script>
+					/*$('.try_example').unbind().bind('click', function(){
+						var exampleid = $(this).attr('exampleid');
+						window.location = 'examples/' + exampleid + '.html';
+					});*/
+/*					
+					if(window.location.protocol != "https:" && window.location.protocol != "http:"){
+						$('.examples').hide();
+						$('.examples-only-webserver').show();
+					};
+*/
+				</script>
+			</div>
+			<!-- div class="card-footer text-muted"></div -->
+		</div>
+
+		<a class="local-link-sdk" name="changelog">.</a>
+		<div class="card">
+			<div class="card-body">
+				<h4 class="card-title">Change Log</h4>
+				<div class="card-text changelog short">
+					<h1>Web SDK for VXG Cloud &amp; Server</h1>
+
+<h3>Web SDK for VXG Cloud &amp; Server 3.0.16_200326</h3>
+
+<ul>
+<li>Cleaned the SDK index.html </li>
+<li>Fixed: player does not work without web server</li>
+<li>Added: new errors on the event onError</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 3.0.14_200122</h3>
+
+<ul>
+<li>Optimized controls, controls are hidden if the user clicks on the player</li>
+<li>PTZ control shows only buttons for actions supported by the camera</li>
+<li>Fixed speed control</li>
+<li>Added the ability to switch 12-hour and 24-hour clocks</li>
+<li>Added support for remote channels in the player</li>
+<li>Fixed problem with video not starting after camera reboot</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 3.0.8_191017</h3>
+
+<ul>
+<li>Fixed settings for multi-instance</li>
+<li>Fixed range mode in timeline</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 3.0.7_191016</h3>
+
+<ul>
+<li>Fix zoom-panel</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 3.0.6_191014</h3>
+
+<ul>
+<li>Fixed destroy method</li>
+<li>Fixed timeline behaviour. Now timeline could be in another div, or inside player div(default), that defined from CloudPlayerSDK-constructor parameters</li>
+<li>Fixed timeline when  multi instance is used </li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 3.0.1_190927</h3>
+
+<ul>
+<li>Fixed examples and updated pictures</li>
+<li>Fixed snippets code</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 3.0.1_190914</h3>
+
+<ul>
+<li>Changed design </li>
+<li>Added speed control</li>
+<li>Fixed issue with formats</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.63_190715</h3>
+
+<ul>
+<li>Added : option 'mute' sets mute on player start . 
+Broswer does not start video if there is audio in stream. 
+Example : 
+opt['mute'] = true;
+player = new CloudPlayerSDK('player1', opt);</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.62_190728</h3>
+
+<ul>
+<li>Player is started in Mute mode</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.60_190415</h3>
+
+<ul>
+<li>Small fix instruction</li>
+<li>Fixed sound control for WebRTC</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.59_190304</h3>
+
+<ul>
+<li>Removed hardcoded 'withCredential' for HLS (not used anymore)</li>
+<li>Unused code was cleaned up </li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.58_190228</h3>
+
+<ul>
+<li>Fixed autoplay for WebRTC (VXG Server)</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.57_190218</h3>
+
+<ul>
+<li>Added new option 'trasholdPlaybackInMs'</li>
+<li>Updated webrtc-adapter-latest.js (7.2.0)</li>
+<li>Fixed autoplay for WebRTC (Cloud)</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.56_190121</h3>
+
+<ul>
+<li>Added event TIMELINE<em>END</em>UPDATED and player will automatically restart after error on this event</li>
+<li>Fixed autoplay for Angular</li>
+<li>Added missing REANGE_ENDED</li>
+<li>Fixed autoplay on Safari browser</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.55_190117</h3>
+
+<ul>
+<li>Added event 'CHANGED_CONTROLS'</li>
+<li>Added event 'RANGE_ENDED'</li>
+<li>Added event 'CHANNEL_STATUS'</li>
+<li>Added event 'ERROR'</li>
+<li>Added event 'USER<em>CLICKED</em>ON_TIMELINE'</li>
+<li>Added 'addCallback' to CloudPlayerSDK</li>
+<li>Added option 'polingRangeDataEveryInSec'</li>
+<li>Improved timeline in range mode</li>
+<li>Changed setting of ignoring holes in timeline from 2 to 4 seconds</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.54_181225</h3>
+
+<ul>
+<li>Improved message when records are missing</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.53_181121</h3>
+
+<ul>
+<li>Fixed playback settings </li>
+<li>Added option useTimezone</li>
+<li>Fixed position on first start in CloudPlayerSDK</li>
+<li>Fixed missing include WebRTC-adapter in quick start</li>
+<li>Fixed CNVR-1398 'Play button on HLS when first start'</li>
+<li>Set default player format to HTML5 (HLS)</li>
+<li>Enabled example_cloudsdkplayer9 - (WebRTC+PTZ)</li>
+<li>Fixed calendar (days in previous month)</li>
+<li>Fixed CNVR-1134 CloudSDK Web: need processing cookies in sdk</li>
+<li>Use turn.vxg.io server</li>
+<li>Fixed CNVR-1312 WEBRTC/RTMP/HLS settings disappeared after you change them at playback mode</li>
+<li>Added CloudHelpers.unpackAccessToken</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.52_181102</h3>
+
+<ul>
+<li>Implemented calendar</li>
+<li>Implemented new streaming format</li>
+<li>Added the new version of WebRTC</li>
+<li>Updated webrtc-adapter</li>
+<li>Improved player settings</li>
+<li>Fixed restrictions for CDN multi-domain option</li>
+<li>Fixed "zoom" function for playback</li>
+<li>Use turn.vxg.io server</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.51_181018</h3>
+
+<ul>
+<li>Added new option 'mute'</li>
+<li>Added new option 'useOnlyPlayerFormat'</li>
+<li>Improved WebRTC video playback</li>
+<li>Fixed bug when settings dialog is not seen</li>
+<li>Fixed destroy timeline</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.50_180920</h3>
+
+<ul>
+<li>Added support version for a Cloud WebRTC</li>
+<li>Added new options 'preferredPlayerFormat'</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.49_180914</h3>
+
+<ul>
+<li>Updated stun for WebRTC</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.48_180827</h3>
+
+<ul>
+<li>Added option waitSourceActivation</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.47_180820</h3>
+
+<ul>
+<li>Fixed bug with HLS playback</li>
+<li>Fixed bug with working with VXG Server</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.46_180817</h3>
+
+<ul>
+<li>Fixed timeline behavior when using mouse</li>
+<li>Fixed playback of small records</li>
+<li>Disable automoving to cursor for range</li>
+<li>Draw timeline optimized (fixed memory leak)</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.45_180622</h3>
+
+<ul>
+<li>Added algorithm for timeline to follow the cursor</li>
+<li>Fixed CloudHelpers.parseUri</li>
+<li>Fixed WebRTC for flexible server port</li>
+<li>Added new method to destroy and re-create the player on the page</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.44_180607</h3>
+
+<ul>
+<li>Fixed cursor position in timeline for WebRTC</li>
+<li>Live stream will not stop on the end of range</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.43_180606</h3>
+
+<ul>
+<li>Fixed digital zoom for WebRTC</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.42_180605</h3>
+
+<ul>
+<li>Fixed hide settings on button "settings"</li>
+<li>Fixed fullscreen for mobiles</li>
+<li>Fixed UI and behavior for mute/unmute</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.41_180530</h3>
+
+<ul>
+<li>Redesigned settings</li>
+<li>Added handling error for WebRTC and VXG Server</li>
+<li>Fixed cross server play WebRTC (for VXG Server)</li>
+<li>Added new state "Video source is offline" and autostart from this state to play</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.40_180525</h3>
+
+<ul>
+<li>Improved streamer for check flash in Firefox</li>
+<li>Extended access_token for player and for streaming</li>
+<li>Fixed autoplay for chrome and hls and privacy</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.39_180521</h3>
+
+<ul>
+<li>Added "goto live" button in timeline</li>
+<li>Change behavior on search real record for play</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.38_180515</h3>
+
+<ul>
+<li>Fixed timezone in timeline</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.37_180510</h3>
+
+<ul>
+<li>Added WebRTC for a VXG Server</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.36_180505</h3>
+
+<ul>
+<li>Enabled volume control</li>
+<li>Fixed autostart player in safari</li>
+<li>Fixed playback</li>
+<li>Fixed zip-archive for windows default zip-viewer</li>
+<li>Fixed behavior in range mode</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.34_180124</h3>
+
+<ul>
+<li>Fixed problem with view zip explorer on windows</li>
+<li>Implemented range mode</li>
+<li>Fixes in timeline</li>
+<li>Fixed "ERROR ReferenceError: d is not defined"</li>
+<li>Fixed close in CloudPlayerSDK</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.33_171228</h3>
+
+<ul>
+<li>Fixed copy object</li>
+<li>Redesign place for examples</li>
+<li>Added new sample with 4 players</li>
+<li>Updated icons</li>
+<li>Added customization for svcp url</li>
+<li>Improved CloudPlayerSDK</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.32_171222</h3>
+
+<ul>
+<li>Fixed quick start</li>
+<li>Updated examples</li>
+<li>Fixed enableSharing (added play to acls)</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.31_171219</h3>
+
+<ul>
+<li>Added CloudPlayerSDK</li>
+<li>Fixed player double inizialization</li>
+<li>Added sharing for token</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.30_171212</h3>
+
+<ul>
+<li>Redesign share example</li>
+<li>Added getCameraListLight - for simple updating statuses</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.29_171208</h3>
+
+<ul>
+<li>Fixed getRecordingMode</li>
+<li>Added to sdk.version date of build</li>
+<li>Fixed for firefox start video</li>
+<li>Improved CloudTokenConnection for custom svcp_host</li>
+<li>Added CloudShareConnection</li>
+<li>Updated examples list</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.28_171115</h3>
+
+<ul>
+<li>Added deny try example if examples/snippets opened as local file</li>
+<li>Fixed problem with enter license key (dialog sometimes not closing)</li>
+<li>Removed TripleValue and changed setForStream use bool</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.27_171115</h3>
+
+<ul>
+<li>Implemented CloudCameraListFilter setForStream</li>
+<li>Implemented CloudCameraListFilter setPrivacy</li>
+<li>Added enums: CloudCameraPrivacyFilter, TripleValue</li>
+<li>Reset position to live on change source in player</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.26_171114</h3>
+
+<ul>
+<li>Fixed change source</li>
+<li>Changed color</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.25_171114</h3>
+
+<ul>
+<li>Fixed black player screen</li>
+<li>Enabled sound default on 0.5</li>
+<li>New behaivor: If user click on timeline in future - than player will be play live</li>
+<li>Removed cursor style 'move'</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.24_171110</h3>
+
+<ul>
+<li>First version fo timeline</li>
+<li>Fixed examples</li>
+<li>CloudPlayer: if source is null then play button will be hidden.</li>
+<li>Removed showTimeline &amp; hideTimeline from CloudPlayer and added addCallback/removeCallback</li>
+<li>Added navigation to examples</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.23_171018</h3>
+
+<ul>
+<li>Fixed example4 (CameraLis/Create/Delete/Update)</li>
+<li>Added setURLLogin and setURLPassword to CloudCamera</li>
+</ul>
+
+<h3>CloudSDK 2.0.22_171018</h3>
+
+<ul>
+<li>Fixed hls playing for desktop versions</li>
+<li>Removed printing to log user data (license_key)</li>
+<li>Removed printing rtsp url to log</li>
+<li>Fixed error on check play hls</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.21_171016</h3>
+
+<ul>
+<li>Fixed player for iOS 11 (hls).</li>
+<li>Updated hls plugin and added min version</li>
+<li>Added setPublic to CloudCameraListFilter</li>
+<li>Added setOwner to CloudCameraListFilter</li>
+<li>Fixed loading popper js</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.20_171013</h3>
+
+<ul>
+<li>Fixed update timezone on camera</li>
+<li>Added moment timezone for show correct camera time</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.18_171013</h3>
+
+<ul>
+<li>Fixed fullscreen</li>
+<li>Added sdk version to player</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.17_171013</h3>
+
+<ul>
+<li>Fixed call play in player twice</li>
+<li>Added CloudTokenConnection</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.16_171012</h3>
+
+<ul>
+<li>Fixed problem with hls</li>
+<li>Cleanup examples</li>
+<li>Redesign fonts/menu</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.15_171005</h3>
+
+<ul>
+<li>Check for launching HTML from a file</li>
+<li>Live URL sample has wrong file paths</li>
+<li>Live URL snippet is not working</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.14_171004</h3>
+
+<ul>
+<li>Added missing snippets and exampels</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.13_171002</h3>
+
+<ul>
+<li>Start implemnetation for session timeline</li>
+<li>Fixed live time for cloud session</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.12_170921</h3>
+
+<ul>
+<li>Fixed playing offline session</li>
+<li>Fixed fullscreen in player</li>
+<li>Fixed HLS for safari</li>
+<li>Fixed white flash background</li>
+<li>Fixed update api token</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.11_170921</h3>
+
+<ul>
+<li>CloudSession check end time is null</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.6_170912</h3>
+
+<ul>
+<li>Added getStatisticsLive to CloudSession (for Online)</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.4_170908</h3>
+
+<ul>
+<li>Added first version of player + play live/playback sessions</li>
+<li>Fixed CloudSession refresh</li>
+<li>Implemneted timeline animation, and scaling-mode: 12h, hr, min</li>
+<li>CloudUserInfo: chnaged getCameraLimit and getCameraCreated (removed methods getStreamerLimit and getStreamerCreated)</li>
+<li>Fixed styles for snippet pages</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.1_170905</h3>
+
+<ul>
+<li>Added getAccountCapabilities to CloudAPI</li>
+<li>Implemented getUserInfo</li>
+<li>CloudCameraList: Added handling error for NO CLOUD CONNECTION</li>
+</ul>
+
+<h3>Web SDK for VXG Cloud &amp; Server 2.0.0_170831</h3>
+
+<ul>
+<li>Init first version</li>
+</ul>
+				</div>
+				<div class="card-text">
+					<div class="btn btn-link" id="changelog_read_more">Read More...</div>
+					<script>
+						$('#changelog_read_more').unbind().bind('click', function(){
+							if($('.changelog').hasClass('short')){
+								$('.changelog').removeClass('short');
+								$('#changelog_read_more').parent().hide();
+							}else{
+								$('.changelog').addClass('short');
+							}
+						});
+					</script>
+				</div>
+			</div>
+			<!-- div class="card-footer text-muted"></div-->
+		</div>
+		<br>
+		<br>
+		
+		
+	</div>
+</body>
+</html>

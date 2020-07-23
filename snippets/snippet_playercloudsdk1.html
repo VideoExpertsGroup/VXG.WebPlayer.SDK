@@ -1,0 +1,131 @@
+<html>
+	<head>
+		<title>VXGCloudSDK-Web 3.0.18</title>
+		<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+		
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		<meta http-equiv="x-ua-compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+		<link rel="stylesheet" type="text/css" href="../css/bootstrap.min.css">
+		<link rel="stylesheet" id="font-style-css" href="https://fonts.googleapis.com/css?family=Montserrat%3A400%2C700&amp;ver=4.7.6" type="text/css" media="all">
+		<link rel="stylesheet" type="text/css" href="../css/index.css">
+
+		<script type="text/javascript" src="../js/jquery-3.1.0.min.js"></script>
+		<script type="text/javascript" src="../js/popper.min.js"></script>
+		<script type="text/javascript" src="../js/bootstrap.min.js"></script>
+
+		
+    <!-- automaticly include: begin -->
+    <link rel="stylesheet" type="text/css" href="../vxgwebsdk/videojs-5.18.3.min.css">
+    <link rel="stylesheet" type="text/css" href="../vxgwebsdk/CloudSDK.min.css">
+    <script type="text/javascript" src="../vxgwebsdk/videojs-5.18.3.min.js"></script>
+    <script type="text/javascript" src="../vxgwebsdk/videojs-contrib-hls.js"></script>
+    <script type="text/javascript" src="../vxgwebsdk/webrtc-adapter-latest.js"></script>
+    <script type="text/javascript" src="../vxgwebsdk/CloudSDK.min.js"></script>
+    <script type="text/javascript">
+	       CloudSDK.flashswf = "../vxgwebsdk/video-js-by-vxg-buff200.swf";
+    </script>
+    <!-- automaticly include: end -->
+
+
+		<!-- Code Highlither -->
+		<link rel="stylesheet" href="../CodeMirror/codemirror.css">
+		<link rel="stylesheet" href="../CodeMirror/theme/ttcn.css">
+		<script src="../CodeMirror/codemirror.js"></script>
+		<script src="../CodeMirror/mode/javascript/javascript.js"></script>
+	</head>
+<body>
+	
+	<nav class="navbar navbar-expand-lg navbar-light navbar-black navbar-toggleable-md  fixed-top">
+		<div class="container">
+		  <a class="navbar-brand" href="#"></a>
+		  <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navigation-menu" aria-controls="navigation-menu" aria-expanded="false" aria-label="Toggle navigation">
+			<span class="navbar-toggler-icon"></span>
+		  </button>
+		  <div class="navbar-collapse collapse" id="navigation-menu">
+			<ul class="navbar-nav ml-auto">
+				<li class="nav-item"><a class="nav-link" href="../#sdk">VXGCloud SDK (3.0.18)</a></li>
+				<li class="nav-item"><a class="nav-link" href="../#docs">Docs</a></li>
+				<li class="nav-item"><a class="nav-link" href="../#examples">Examples</a></li>
+				<li class="nav-item"><a class="nav-link" href="../#codesnippets">Code Snippets</a></li>
+				<li class="nav-item"><a class="nav-link" href="../#support">Support</a></li>
+				<li class="nav-item"><a class="nav-link" href="../#changelog">Change Log</a></li>
+			</ul>
+		  </div>
+		</div>
+	</nav>
+
+	<div class="container main-container">
+		<h2>Live Video</h2>
+		<div class="alert alert-danger" id="only_web_server" style="display: none;">
+			We detected that you have launched the HTML page from a local file. Please place the package on your web server. You can run a web server on your local machine.
+		</div>
+		<table width=100% cellspacing=10px>
+			<tr>
+				<td width=50%>
+					<textarea id="snippet_try_code">var log = new Log('out1');
+log.info("Create CloudPlayerSDK instance");
+window.cloudplayersdk1 = window.cloudplayersdk1 || new CloudPlayerSDK('player1');
+
+// You can get a channel on My StreamLand - https://dashboard.videoexpertsgroup.com/?streaming=
+var channel = 'eyJ0b2t....In0=';
+
+var rc = cloudplayersdk1.setSource(channel);
+if (rc.name === 'OK')
+    log.info('Playing video of the channel...');
+else {
+    log.error('Can not play the channel camera.');
+    log.error('Possible reason: ' + rc.text);
+}
+</textarea>
+				</td>
+				<td width=50%>
+					<div id="player1" style="width: 100%; height: 300px;"></div>
+				</td>
+			</tr>
+			<tr>
+				<td colspan=2>
+					<button class="btn btn-danger" id="execute_try">Run</button>
+				</td>
+			</tr>
+			<tr>
+				<td colspan=2>
+					<h2>Log</h2>
+					<div id="out1" class="logger"></div>
+				</td>
+			</tr>
+		</table>
+	</div>
+	<script>
+		var local_file = window.location.protocol != "https:" && window.location.protocol != "http:";
+		if(local_file){
+			$('#only_web_server').show();
+			$('#execute_try').hide();
+		}
+		
+		window.player = window.player || new CloudPlayer('player1');
+		var el = document.getElementById("snippet_try_code");
+		window.mPanelCodeTry = CodeMirror(function(elt) {
+		  el.parentNode.replaceChild(elt, el);
+		}, {
+			value: el.value,
+			readOnly: false,
+			theme: 'ttcn',
+			mode:  'javascript', // TODO
+			lineNumbers: true,
+			lineWrapping: true
+		});
+		
+		document.getElementById("execute_try").onclick = function(){
+			eval(window.mPanelCodeTry.getValue());
+		}
+		
+		if(localStorage['licenseKey']){
+			var new_val = window.mPanelCodeTry.getValue().replace("yourLicenseKey", localStorage['licenseKey']);
+			window.mPanelCodeTry.setValue(new_val);
+		}
+		
+	</script>
+</body>
+</html>

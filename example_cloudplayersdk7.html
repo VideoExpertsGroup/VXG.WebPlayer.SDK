@@ -1,0 +1,136 @@
+<html>
+	<head>
+		<title>VXGCloudSDK-Web 3.0.18</title>
+		<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+		
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		<meta http-equiv="x-ua-compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+		<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+		<link rel="stylesheet" id="font-style-css" href="https://fonts.googleapis.com/css?family=Montserrat%3A400%2C700&amp;ver=4.7.6" type="text/css" media="all">
+		<link rel="stylesheet" type="text/css" href="css/index.css">
+
+		<script type="text/javascript" src="js/jquery-3.1.0.min.js"></script>
+		<script type="text/javascript" src="js/popper.min.js"></script>
+		<script type="text/javascript" src="js/bootstrap.min.js"></script>
+
+		
+    <!-- automaticly include: begin -->
+    <link rel="stylesheet" type="text/css" href="vxgwebsdk/videojs-5.18.3.min.css">
+    <link rel="stylesheet" type="text/css" href="vxgwebsdk/CloudSDK.min.css">
+    <script type="text/javascript" src="vxgwebsdk/videojs-5.18.3.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/videojs-contrib-hls.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/webrtc-adapter-latest.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/CloudSDK.min.js"></script>
+    <script type="text/javascript">
+	       CloudSDK.flashswf = "vxgwebsdk/video-js-by-vxg-buff200.swf";
+    </script>
+    <!-- automaticly include: end -->
+
+		<script>
+			window.sessNameCh = 'example_cloudplayersdk8_ch';
+
+			$(document).ready(function () {
+				try {  var sChannel = window.sessionStorage.getItem(window.sessNameCh);
+					$('#channel').val(sChannel !== null ? sChannel : ''); } catch (e) {}
+					
+				var startTime = CloudHelpers.getCurrentTimeUTC() - 30*60*1000; // now - 30 minutes
+				var endTime = CloudHelpers.getCurrentTimeUTC() + 30*60*1000; // now + 30 minutes
+
+				window.player = new CloudPlayerSDK('player1', {
+					autohide: 3000,
+					timeline: true,
+					arrows: false,
+					gotoLive: false,
+					range: {min: startTime, max: endTime}
+				});
+
+				// player.setRange(startTime, endTime);
+				
+				$('#play_channel').unbind().bind('click', function(){
+					var channelElem = $('#channel');
+					var channel = channelElem.val();
+					if (!channel || channel === '') {
+						channelElem.css('background-color', 'red').focus();
+						setTimeout(function () {channelElem.css('background-color', '');},200);
+						return;
+					}
+
+					// player.stop();
+					player.setSource(channel);
+					player.setPosition(startTime);
+					player.timeline.moveToPosition(startTime)
+					player.play();
+					try { window.sessionStorage.setItem(window.sessNameCh, channel) } catch(e) { }
+				});
+			});
+		</script>
+	</head>
+
+<body>
+
+	<nav class="navbar navbar-expand-lg navbar-light navbar-black navbar-toggleable-md  fixed-top">
+		<div class="container">
+		  <a class="navbar-brand" href="#"></a>
+		  <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navigation-menu" aria-controls="navigation-menu" aria-expanded="false" aria-label="Toggle navigation">
+			<span class="navbar-toggler-icon"></span>
+		  </button>
+		  <div class="navbar-collapse collapse" id="navigation-menu">
+			<ul class="navbar-nav ml-auto">
+				<li class="nav-item"><a class="nav-link" href="index.html#sdk">VXGCloud SDK (3.0.18)</a></li>
+				<!-- li class="nav-item"><a class="nav-link" href="index.html#docs">Docs</a></li -->
+				<li class="nav-item"><a class="nav-link" href="index.html#examples">Examples</a></li>
+				<li class="nav-item"><a class="nav-link" href="index.html#codesnippets">Code Snippets</a></li>
+				<li class="nav-item"><a class="nav-link" href="index.html#support">Support</a></li>
+				<li class="nav-item"><a class="nav-link" href="index.html#changelog">Change Log</a></li>
+			</ul>
+		  </div>
+		</div>
+	</nav>
+
+<div class="container main-container">
+
+	<div class="row">
+		<div class="col-md-1"></div>
+		<div class="col-md-10 col-md-offset-1">
+			<h2>Time Range</h2>
+			<p>
+				<a href="example_cloudplayersdk6.html" id="prev_example" class="btn btn-link ">Previous example</a>
+				<a href="example_cloudplayersdk8.html" id="next_example" class="btn btn-link ">Next example</a>
+			</p>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-1"></div>
+		<div class="col-md-10 col-md-offset-1">
+			<div class="form-group">
+				<label for="cameraID">Access token</label>
+				<div class="input-group">
+					<input id="channel" type="text" class="form-control" placeholder="Enter access token" value="">
+					<span class="input-group-btn">
+						<button id="play_channel" class="btn btn-default btn-vxg">Play</button>
+					</span>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-1"></div>
+		<div class="col-md-10 col-md-offset-1" style="height: 520px">
+			<div id="player1"></div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-1"></div>
+		<div class="col-md-10 col-md-offset-1" style="height: 50px">
+
+		</div>
+	</div>
+
+</div>
+</body>
+</html>
