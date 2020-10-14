@@ -1,6 +1,6 @@
 // CloudSDK.debug.js
-// version: 3.0.18
-// date-of-build: 200702
+// version: 3.1.2
+// date-of-build: 201014
 // copyright (c) VXG Inc
 
 
@@ -66,7 +66,11 @@ window.CloudHelpers.RequestWrap = function(){
 	}
 	if(obj.token){
 		xhr.setRequestHeader('Authorization', "SkyVR " + obj.token);
+	} else if (obj.access_token) {
+		xhr.setRequestHeader('Authorization', "Acc " + obj.access_token);
 	}
+	
+	
 	xhr.onload = function() {
 		var r = "";
 		if(this.responseText != ""){
@@ -1603,7 +1607,47 @@ window.CloudAPI = function(cloud_token, svcp_url){
 			token: self._getCloudToken(),
 		});
 	}
+	
+	// clips
+	self.createClip = function ( camid, title, start, end, delete_at, access_token ) {
+	    title = title || '';
 
+	    obj = {};
+	    obj.camid		= camid;
+	    obj.source_camid	= camid;
+	    obj.start		= start;
+	    obj.end		= end;
+	    obj.wait_for_data	= true;
+	    if (delete_at !== undefined) {
+		obj.delete_at = delete_at;
+	    }
+	    var request = {};
+	    request.url = self.endpoints.clips;
+	    request.type = 'POST';
+	    request.data = JSON.stringify(obj);
+	    request.contentType = 'application/json';
+	    if (access_token !== undefined) {
+		request.access_token = access_token;
+	    } else {
+		request.token = self._getCloudToken();
+	    }
+    
+	    return self.requestWrap.request(request);
+	}
+	
+	self.getClip = function ( clipid , access_token) {
+	    var request = {};
+	    request.url = self.endpoints.clips + clipid + '/';
+	    request.type = 'GET';
+	    if (access_token !== undefined) {
+		request.access_token = access_token;
+	    } else {
+		request.token = self._getCloudToken();
+	    }
+	    
+	    return self.requestWrap.request(request);
+	}
+	
 	self.getChannels = function(){
 		return self.requestWrap.request({
 			url: self.endpoints.channels,
@@ -1612,13 +1656,13 @@ window.CloudAPI = function(cloud_token, svcp_url){
 		});
 	}
 
-    self.getCameraStreamingURLs = function(camid){
-        return self.requestWrap.request({
-            url: self.endpoints.cameras + camid + "/stream_urls/",
-            type: 'GET',
-            token: self._getCloudToken()
-        });
-    };
+	self.getCameraStreamingURLs = function(camid){
+	    return self.requestWrap.request({
+		url: self.endpoints.cameras + camid + "/stream_urls/",
+		type: 'GET',
+		token: self._getCloudToken()
+	    });
+	};
 
 };
 
@@ -5061,6 +5105,45 @@ window.CloudCamera = function(conn, jsonData){
 		return p;
 	}
 	
+	self.createClip = function(title, start, end, delete_at, accessToken) {
+		var p = CloudHelpers.promise();
+		
+		if(!mConn || !mConn.isOpened()){
+			p.reject(CloudReturnCode.ERROR_NO_CLOUD_CONNECTION);
+			return p;
+		}
+		var start_dt = CloudHelpers.formatUTCTime(start);
+		var end_dt = CloudHelpers.formatUTCTime(end);
+		var del_at_dt = CloudHelpers.formatUTCTime(delete_at);
+
+		mConn._getAPI().createClip(mID, title, start_dt, end_dt, del_at_dt, accessToken)
+		.done(function(r){
+			p.resolve(r);
+		})
+		.fail(function(err){
+			CloudHelpers.handleError(err, p);
+		});
+		return p;
+	}
+	
+	self.getClip = function (clipid, accessToken) {
+	    var p = CloudHelpers.promise();
+
+	    if(!mConn || !mConn.isOpened()){
+		p.reject(CloudReturnCode.ERROR_NO_CLOUD_CONNECTION);
+		return p;
+	    }
+	    mConn._getAPI().getClip(clipid, accessToken)
+	    .done(function(r){
+		p.resolve(r);
+	    })
+	    .fail(function(err){
+		CloudHelpers.handleError(err, p);
+	    });
+	    return p;
+	}
+	
+	
 	var sharing_token_name_for_stream = 'COMMON_SHARING_TOKEN_FOR_STREAM';
 
 	function channelCodeForStream(share_token){
@@ -5937,6 +6020,7 @@ window.CloudPlayer = function(elid, options){
 	var mTimeWaitStartStream = 0;
 	var mStopped = true;
 	var mPlaying = false;
+	var mPausing = false;
 	var mHLSLinkExpire = 0;
 	var mSafariAndHlsNotStarted = false;
 	var mCallbacks = CloudHelpers.createCallbacks();
@@ -5961,6 +6045,7 @@ window.CloudPlayer = function(elid, options){
 	var mTrasholdPlayback = 0; // default in ms for playback
 	var mPreferredPlayerFormat = null;
 	var f_callbackFullscreenFunc = null;
+	var mAccessToken = null;
 
 	self.timePolingLiveUrls = 15000;
 	self.player = document.getElementById(elid);
@@ -5990,6 +6075,7 @@ window.CloudPlayer = function(elid, options){
 	}
 	// videojs.options.hls.withCredentials = false;
 	videojs.options.hls.enableLowInitialPlaylist = true;
+	videojs.options.suppressNotSupportedError = false;
 	// videojs.options.hls.blacklistDuration = 0;
 	// videojs.options.hls.handleManifestRedirects = false;
 
@@ -6211,16 +6297,22 @@ window.CloudPlayer = function(elid, options){
 		+ '<div class="cloudplayer-timeline-container"></div>'
 		+ '<div class="cloudplayer-controls">'
 		+ '	<div class="cloudplayer-play" style="display: none"></div>'
-		+ '	<div class="cloudplayer-stop" style="display: none"></div>'		+ '	<div class="cloudplayer-volume-mute"></div>'
+		+ '	<div class="cloudplayer-stop" style="display: none"></div>'
+		+ '	<div class="cloudplayer-pause hidden"></div>'
+		+ '	<div class="cloudplayer-volume-mute"></div>'
 		+ '	<div class="cloudplayer-volume-container">'
-		+ '	<input type="range" min="0" max="100" step="1" data-buffer="0" id="volume" class="cloudplayer-volume" data-rangeSlider>'
-		+ '	<output></output>'
-		+ '</div>'
+		+ '		<input type="range" min="0" max="100" step="1" data-buffer="0" id="volume" class="cloudplayer-volume" data-rangeSlider>'
+		+ '		<output></output>'
+		+ '	</div>'
 		+ '	<div class="cloudplayer-time"></div>'
 		+ '	<div class="cloudplayer-volume-down"></div>'
 		+ '	<div class="cloudplayer-volume-progress vol7"></div>'
 		+ '	<div class="cloudplayer-volume-up"></div>'
 		+ '	<div class="cloudplayer-microphone"></div>'
+		+ '	<div class="cloudplayer-right-divider"></div>'
+		+ '	<div class="cloudplayer-get-clip" style="display: none"></div>'
+		+ '	<div class="cloudplayer-get-shot" style="display: none"></div>'
+		+ '	<div class="cloudplayer-single-element-divider"></div>'
 		+ '	<div class="cloudplayer-settings"></div>'
 		+ '	<div class="cloudplayer-show-zoom"></div>'
 		+ '	<div class="cloudplayer-show-ptz"></div>'
@@ -6230,11 +6322,16 @@ window.CloudPlayer = function(elid, options){
 		+ '<div class="cloudcameracalendar-content">'
 		+ '</div>'
 		+ '<div class="cloudplayer-big-play-button" style="display: none"></div>'
+		+ '<canvas class="cloudplayer-stub-snapshot" style="width:100%; height:100%; display:none;"></canvas>'
+		+ '<canvas class="cloudplayer-snapshot hidden"></canvas>'
+		+ '<div class="cloudplayer-share-clip" style="width:100%; height:100%; display:none;"></div>'
 		+ '<div class="allvideotags" style="width:100%; height:100%;" >'
-		+ '<video crossorigin="anonymous" id="' + elid + '_vjs" class="video-js" preload="auto" class="video-js vjs-default-skin vjs-live"'
-		+ ' muted=' + self.m.mute + ' autoplay=true preload playsinline="true"></video>'
-		+ '<video crossorigin="anonymous" id="' + elid + '_vjs2" class="video-js" preload="auto" class="video-js vjs-default-skin vjs-live"'
+		+ '	<video crossorigin="anonymous" id="' + elid + '_vjs" class="video-js" preload="auto" class="video-js vjs-default-skin vjs-live vjs-fill" '
+		+ '		controls width="100%" height="100%" data-setup=\'{"aspectRatio":"16:9", "fluid": true}\''
+		+ '		 muted=' + self.m.mute + ' autoplay=true preload playsinline="true"></video>'
+/*		+ '<video crossorigin="anonymous" id="' + elid + '_vjs2" class="video-js" preload="auto" class="video-js vjs-default-skin vjs-live"'
 		+ ' muted=' + self.m.mute + ' autoplay=true preload playsinline="true" ></video>'
+*/	
 		+ '<video crossorigin="anonymous" id="' + elid + '_nv1" class="cloudplayer-native-video"'
 		+ ' autoplay=true preload  playsinline="true" ></video>'
 		+ '<video crossorigin="anonymous" id="' + elid + '_nv2" class="cloudplayer-native-video"'
@@ -6251,15 +6348,17 @@ window.CloudPlayer = function(elid, options){
 	;
 
 	self.vjs = videojs(elid + '_vjs', {
-		"controls": false
+		"controls": false,
 	});
 	
-	self.vjs2 = videojs(elid + '_vjs2', {
-		"controls": false
-	}).ready(function(){
-		self.vjs2.el().style.display = "none";
-	});
+	
+	//self.vjs2 = videojs(elid + '_vjs2', {
+	//	"controls": false
+	//}).ready(function(){
+		//self.vjs2.style.display = "none";
+	//});
 
+	
 	self.vjs.on('error',function(error){
 		_hideloading();
 		if(self.vjs.error() != null){
@@ -6280,8 +6379,11 @@ window.CloudPlayer = function(elid, options){
 				self._showConsoleError({name: "VIDEOJS_ERROR", text: "Code " + e.code + ": " + e.message, code: -6000});
 			}
 		}
+		self._hideSnapshot(false);
 		self.stop("by_vjs_error");
-		self.play();
+		setTimeout(function(){
+		    self.play();
+		},1000);
 	});
 
 	var mPlaybackPlayer1 = null;
@@ -6292,7 +6394,7 @@ window.CloudPlayer = function(elid, options){
 		mPlaybackPlayer2 = new CloudPlayerNativeVideo(elid + '_nv2');
 	} else {
 		mPlaybackPlayer1 = self.vjs;
-		mPlaybackPlayer2 = self.vjs2;
+		//mPlaybackPlayer2 = self.vjs2;
 	}
 
 	var mUniqPlay = null;
@@ -6308,10 +6410,13 @@ window.CloudPlayer = function(elid, options){
 	var el_controls_container = self.player.getElementsByClassName('cloudplayer-controls-container')[0];
 	var el_controls_zoom_switcher = self.player.getElementsByClassName('cloudplayer-show-zoom')[0];
 	var el_controls_ptz_switcher = self.player.getElementsByClassName('cloudplayer-show-ptz')[0];
+	var el_controls_get_shot = self.player.getElementsByClassName('cloudplayer-get-shot')[0];
+	var el_controls_get_clip = self.player.getElementsByClassName('cloudplayer-get-clip')[0];
 	var el_controls_ptz_container = self.player.getElementsByClassName('cloudplayer-ptz')[0];
 	var mElementPlay = self.player.getElementsByClassName('cloudplayer-play')[0];
 	var el_info = self.player.getElementsByClassName('cloudplayer-info')[0];
 	var el_stop = self.player.getElementsByClassName('cloudplayer-stop')[0];
+	var el_pause = self.player.getElementsByClassName('cloudplayer-pause')[0];
 	var el_loader = self.player.getElementsByClassName('cloudplayer-loader')[0];
 	var mElError = self.player.getElementsByClassName('cloudplayer-error')[0];
 	var mElErrorText = self.player.getElementsByClassName('cloudplayer-error-text')[0];
@@ -6350,6 +6455,11 @@ window.CloudPlayer = function(elid, options){
 	var mElSettings_speed_mode = self.player.querySelectorAll('.cloudplayer-speed-mode');
 	var mElSettings_dewarping_mode = self.player.querySelectorAll('.cloudplayer-dewarping-mode');
 
+	var el_shareclip = self.player.getElementsByClassName('cloudplayer-share-clip')[0];
+	if (el_shareclip !== undefined){
+	    var shareClip = new CloudShareClipController(el_shareclip, self._shareClipCallback);
+	}
+
 	for (var speed = mElSettings_speed_mode.length - 1; speed >= 0; speed--) {
 		mElSettings_speed_mode[speed].onclick = selectSpeed;
 	}
@@ -6385,6 +6495,7 @@ window.CloudPlayer = function(elid, options){
 		mElSettings_selected_speed_container.textContent = this.textContent;
 		_applySpeed(this.dataset.speed);
 	}
+	
 
 	function selectDewarping(){
 		for (var el = mElSettings_dewarping_mode.length - 1; el >= 0; el--) {
@@ -6455,7 +6566,8 @@ window.CloudPlayer = function(elid, options){
 
 	self.onDocumentClick = function(event) {
 		var isClickInside = el_info.contains(event.target) || mElSettingsOpen == event.target || mElSettingsOpen.contains(event.target) ||
-			mElementCalendar == event.target || mElementCalendar.contains(event.target) ||
+			mElementCalendar == event.target || mElementCalendar.contains(event.target) || 
+			el_controls_get_shot == event.target || el_controls_get_clip == event.target ||
 			el_controls_zoom_switcher == event.target || el_controls_zoom_switcher.contains(event.target) ||
 			el_controls_zoom_container == event.target || el_controls_zoom_container.contains(event.target) ||
                         mElementCalendarButton == event.target || mElementCalendarButton.contains(event.target);
@@ -6464,9 +6576,9 @@ window.CloudPlayer = function(elid, options){
 			self.player.classList.remove('showing-zoom', 'showing-settings');
 			if(self.calendar){
 				self.calendar.hideCalendar();
-				var el_timelineCalendar = self.player
-					.getElementsByClassName('cloudcameratimeline-calendar')[0];
-				if (el_timelineCalendar) el_timelineCalendar.classList.remove("shadowed");
+				var el_timelineCalendar = self.player.getElementsByClassName('cloudcameratimeline-calendar')[0];
+				if (el_timelineCalendar) 
+					el_timelineCalendar.classList.remove("shadowed");
 			}
 		}
 	};
@@ -6632,15 +6744,36 @@ window.CloudPlayer = function(elid, options){
 		el_player.classList.toggle('showing-ptz');
 	};
 
+	el_controls_get_shot.onclick = function(){
+		self._getSnapshot();
+	};
+
+	el_controls_get_clip.onclick = function(){
+		console.log("<binary> TODO: get clip here");
+		self._getShareClip();
+	};
+
 	mElSettings_wantWebRTC.onclick = function(){
+		if (options.useOnlyPlayerFormat !== undefined) {
+		    return;
+		}
+	
 		self.setPlayerFormat('webrtc');
 		self.play();
 	}
 	mElSettings_wantFlash.onclick = function(){
+		if (options.useOnlyPlayerFormat !== undefined) {
+		    return;
+		}
+	
 		self.setPlayerFormat('flash');
 		self.play();
 	}
 	mElSettings_wantHTML5.onclick = function(){
+		if (options.useOnlyPlayerFormat !== undefined) {
+		    return;
+		}
+	
 		self.setPlayerFormat('html5');
 		self.play();
 	}
@@ -6664,7 +6797,8 @@ window.CloudPlayer = function(elid, options){
 	function _updatePlayerFormatUI(live_urls) {
 		live_urls = live_urls || {};
 		mElSettings_wantWebRTC.style.display = (live_urls.rtc || live_urls.webrtc) ? '' : 'none';
-		mElSettings_wantFlash.style.display = (!CloudHelpers.isMobile() && live_urls.rtmp) ? '' : 'none';
+		//hide rtmp as Flash-player cause Flash is going to be hide 
+		mElSettings_wantFlash.style.display = 'none';//(!CloudHelpers.isMobile() && live_urls.rtmp) ? '' : 'none';
 		mElSettings_wantHTML5.style.display = (live_urls.hls) ? '' : 'none';
 
 		// UI
@@ -6718,6 +6852,7 @@ window.CloudPlayer = function(elid, options){
 		console.error(err);
 		console.error(err.text);
 	}
+
 	/*
 	 * Poling time Start/Stop 
 	 * */
@@ -6798,7 +6933,7 @@ window.CloudPlayer = function(elid, options){
 	}
 	
 	function _checkAndFixVideoSize(){
-		
+
 		var h = self.vjs.videoHeight();
 		var w = self.vjs.videoWidth();
 		
@@ -6826,11 +6961,18 @@ window.CloudPlayer = function(elid, options){
 		}
 	}
 	
+	function _beforePlay() {
+	    console.log('before play');
+	    self._hideSnapshot(true);
+	}
+	
+	
 	function _stopPolingTime(){
 		clearInterval(mCurrentTimeInterval);
 		el_player_time.innerHTML = "";
 	}
 	
+
 	function _startPolingTime(){
 		console.warn("[PLAYER] Start poling player time");
 		clearInterval(mCurrentTimeInterval);
@@ -7101,11 +7243,13 @@ window.CloudPlayer = function(elid, options){
 
 			// move to live if records not found
 			if (!self.isRange() && mCurrentPlayRecord == null && nCountAfterT == 0) {
+/* [CNVR-1826] 
 				setTimeout( function() {
 					self.setPosition(CloudPlayer.POSITION_LIVE);
 					self.play();
 					mCallbacks.executeCallbacks(CloudPlayerEvent.POSITION_JUMPED, { new_pos: CloudHelpers.getCurrentTimeUTC() });
 				},10);
+*/				
 				return;
 			}
 
@@ -7273,6 +7417,10 @@ window.CloudPlayer = function(elid, options){
 		return mElementCalendar;
 	}
 
+	self.setAccessToken = function( accessToken) {
+	    mAccessToken = accessToken;
+	}
+
 	self.setSource = function(src){
 		_hideerror();
 		clearInterval(mPolingCameraStatus);
@@ -7301,16 +7449,28 @@ window.CloudPlayer = function(elid, options){
 		    return;
 		}
 		el_player.classList.remove('showing-ptz');
+		
+		var el_controls_ptz_switcher	= self.player.getElementsByClassName('cloudplayer-show-ptz')[0];
+		var el_controls_get_clip	= self.player.getElementsByClassName('cloudplayer-get-clip')[0];
+		var el_controls_get_shot	= self.player.getElementsByClassName('cloudplayer-get-shot')[0];
+		
+		if (self.mSrc._origJson().access.indexOf('all') < 0 ) {
+                    el_controls_ptz_switcher.style.display = 'none';
+                    el_controls_get_clip.style.display = 'none';
+		} else {
+		    //binary: ptz check abit later
+		    el_controls_get_clip.style.display = 'block';
+		}
+		el_controls_get_shot.style.display = 'block';
+		
 		if (mConn) {
-		    var el_controls_ptz_switcher = self.player.getElementsByClassName('cloudplayer-show-ptz')[0];
 		    var el_controls_ptz_top = self.player.getElementsByClassName('ptz-top')[0];
 		    var el_controls_ptz_bottom = self.player.getElementsByClassName('ptz-bottom')[0];
 		    var el_controls_ptz_left = self.player.getElementsByClassName('ptz-left')[0];
 		    var el_controls_ptz_right = self.player.getElementsByClassName('ptz-right')[0];
 		    var el_controls_ptz_zoom_in = self.player.getElementsByClassName('ptz-zoom-plus')[0];
 		    var el_controls_ptz_zoom_out = self.player.getElementsByClassName('ptz-zoom-minus')[0];
-                    if (self.mSrc._origJson().access.indexOf('all')<0) el_controls_ptz_switcher.style.display = 'none';
-                    else mConn._getAPI().cameraPtz(self.mSrc.getID()).done(function(r){
+		    mConn._getAPI().cameraPtz(self.mSrc.getID()).done(function(r){
 			console.log(r);
 			var actions = r.actions;
 			if (actions!== undefined){ 
@@ -7357,7 +7517,11 @@ window.CloudPlayer = function(elid, options){
 			return;
 		}
 		_stopPolingTime();
-		try{mPlaybackPlayer1.pause();}catch(e){console.warn("_vjs_play: skip error", e);}
+		try {
+		    mPlaybackPlayer1.pause();
+		} catch(e) {
+		    console.warn("_vjs_play: skip error", e);
+		}
 		mTimeWaitStartStream = 0;
 		// TODO show PlayButton
 		console.warn('_vjs_play. is mobile or autoplay not allowed. show big button');
@@ -7397,7 +7561,11 @@ window.CloudPlayer = function(elid, options){
 
 			if (!mEvent && (is_mobile || safari_and_hls || bFrameAndHLS || bChromeAndHLS)) {
 				_stopPolingTime();
-				try{self.vjs.pause();}catch(e){console.warn("_vjs_play_live: skip error", e);}
+				try {
+				    self.vjs.pause();
+				} catch(e) {
+				    console.warn("_vjs_play_live: skip error", e);
+				}
 				mTimeWaitStartStream = 0;
 				// TODO show PlayButton
 				console.warn('_vjs_play. is mobile or autoplay not allowed. show big button');
@@ -7417,7 +7585,7 @@ window.CloudPlayer = function(elid, options){
 					_startPolingTime();
 				}
 				console.log('vjs_play ');
-			}else{
+			} else {
 				self.vjs.play();
 				_stopPolingTime();
 				_startPolingTime();
@@ -7439,8 +7607,11 @@ window.CloudPlayer = function(elid, options){
 			return;
 		}
 		self.mPlayerFormat = sMode;
-		try{localStorage.setItem("preferred_player_format", self.mPlayerFormat);}catch(e){console.error("[CloudPlayer] error save format: ", e)}
-
+			try {
+			    localStorage.setItem("preferred_player_format", self.mPlayerFormat);
+			}catch(e){
+			    console.error("[CloudPlayer] error save format: ", e)
+			}
 		_updatePlayerFormatUI();
 	}
 
@@ -7448,45 +7619,163 @@ window.CloudPlayer = function(elid, options){
 		return sMode;
 	}
 
-	self.play = function(event){
-		if(mPlaying){
-			self.stop("by_play");
+	self._shareClipCallback = function( inProcess, description, clipinfo) {
+	    var el_controls_get_clip	= self.player.getElementsByClassName('cloudplayer-get-clip')[0];
+	    if (inProcess) {
+		if(description === 'CloudShareClip in process..'){
+		    alert('Clip sharing in proccess..');
 		}
-		if (self.mSrc.type != 'camera') {
-			self._showerror(CloudReturnCode.ERROR_INVALID_SOURCE);
-			return;
-		}
-		mUniqPlay = Math.random();
-		mEvent = event;
-		console.warn("[PLAYER] mUniqPlay: " + mUniqPlay);
-		el_stop.style.display = "inline-block";
-		mElementPlay.style.display = "none";
-		mStopped = false;
-		mPlaying = true;
-		_stopPolingTime();
-		_startPolingTime();
-		self._reset_players();
-		_hideerror();
-		
-		// reset position to start of range
-		if (self.isRange() && mPosition == -1 && CloudHelpers.getCurrentTimeUTC() > mRangeMax) {
-			mPosition = mRangeMin;
-		}
-
-		// reset position to start of range
-		if (self.isRange() && mPosition > mRangeMax) {
-			mPosition = mRangeMin;
-		}
-
-		if(mPosition == -1){
-			_loadLiveUrl(mUniqPlay);
-			mCallbacks.executeCallbacks(CloudPlayerEvent.POSITION_JUMPED, {new_pos: CloudHelpers.getCurrentTimeUTC()});
-		}else{
-			console.warn("Try load records from " + CloudHelpers.formatUTCTime(mPosition));
-			_loadRecords(mUniqPlay);
-		}
-		_showloading();
+		el_controls_get_clip.classList.add('inprocess');
+	    } else {
+		el_controls_get_clip.classList.remove('inprocess');
+	    }
+	    
+	    if (clipinfo !== undefined) {
+		console.log("ShareClipInfo: " + clipinfo.url);
+		var downloadLink = document.createElement('a');
+		downloadLink.setAttribute('href', clipinfo.url);
+		downloadLink.click();
+	    } else {
+		console.log("ShareClipInfo: " + description);
+	    }
 	}
+
+	self._getShareClip = function() {
+	    var cloudcamera = self.mSrc;
+	    var position = mPosition;
+	    if (position == -1) {
+		var now = new Date();
+		position = now.getTime();
+	    }
+	    var shareclip = self.player.getElementsByClassName('cloudplayer-share-clip')[0];
+	    
+	    if ((shareclip !== undefined ) 
+	    &&  (cloudcamera !== undefined) 
+	    &&  (mAccessToken && (mAccessToken !== undefined))
+	    ) { 
+		shareclip.createClip( cloudcamera, mAccessToken, self._shareClipCallback, position );
+	    }
+	}
+
+	self._onResize  = function() {
+	    var element = self.player.getElementsByClassName('cloudplayer-snapshot')[0];
+	    var allvideotags = self.player.getElementsByClassName('allvideotags')[0];
+	    
+	    element.setAttribute('width', allvideotags.clientWidth);
+	    element.setAttribute('height', allvideotags.clientHeight);
+	}
+	self._onResize();
+
+	window.addEventListener("resize", self._onResize);
+
+	self._getSnapshot = function () {
+	    if (self.player) {
+		var stub = self.player.getElementsByClassName('cloudplayer-stub-snapshot')[0];
+		var videotag = null;
+		/*
+		if (mUsedPlayer === "hls") {
+		    videotag = self.player.getElementsByClassName('vjs-tech')[0];
+		} else if (mUsedPlayer === "webrtc2") {
+		    videotag = self.player.getElementsByClassName('cloudplayer-webrtc')[0];
+		}
+		*/
+
+		var vtags = self.player.getElementsByTagName('video');
+		for (var i =0; i < vtags.length; i++) {
+		    var el = vtags[i];
+		    var isDisp = el.currentStyle ? el.currentStyle.display :  getComputedStyle(el, null).display;
+		    var isParentDisp = el.parentElement.currentStyle ? el.parentElement.currentStyle.display :  getComputedStyle(el.parentElement, null).display;
+		    if (el.classList.contains('vjs-tech')) {
+			isDisp = isParentDisp;
+		    }
+		    if (isDisp === 'block' || isDisp === 'inline-block') {
+			videotag = el;
+			break;
+		    }
+		}
+		
+		if (videotag != null ) {
+		    var width 	= videotag.videoWidth ;
+		    var height	= videotag.videoHeight;
+		    if ((width > 0) && (height > 0)) {
+			stub.setAttribute('width', width);
+			stub.setAttribute('height', height);
+			context = stub.getContext('2d');
+			if (context != null) {
+			    context.fillRect(0, 0, width, height);
+			    context.drawImage(videotag, 0, 0, width, height);
+			    var downloadLink = document.createElement('a');
+			    downloadLink.setAttribute('download', 'snapshot.png');
+			    stub.toBlob(function(blob) {
+				var url = URL.createObjectURL(blob);
+				downloadLink.setAttribute('href', url);
+				downloadLink.click();
+			    });
+			}
+		    }
+		}
+	    }
+	}
+    
+	self._hideSnapshot = function (isHidden) {
+	    if (self.player) {
+		var element = self.player.getElementsByClassName('cloudplayer-snapshot')[0];
+		if( isHidden) {
+		    $(element).addClass("hidden");
+		} else {
+		    $(element).removeClass("hidden");
+		}
+		var videotag = null;
+		
+		
+		var vtags = self.player.getElementsByTagName('video');
+		for (var i =0; i < vtags.length; i++) {
+		    var el = vtags[i];
+		    var isDisp = el.currentStyle ? el.currentStyle.display :  getComputedStyle(el, null).display;
+		    var isParentDisp = el.parentElement.currentStyle ? el.parentElement.currentStyle.display :  getComputedStyle(el.parentElement, null).display;
+		    if (el.classList.contains('vjs-tech')) {
+			isDisp = isParentDisp;
+		    }
+		    if (isDisp === 'block' || isDisp === 'inline-block') {
+			videotag = el;
+			break;
+		    }
+		}
+		
+		if (videotag != null) {
+		    var dx = 0, dy = 0;
+		    var width, height;
+		    
+		    var videow = width  = videotag.videoWidth;
+		    var videoh = height = videotag.videoHeight;
+		    
+		    var canvasw = element.getAttribute('width');
+		    var canvash = element.getAttribute('height');
+
+		    var ratio = videow / videoh;
+		    if (ratio >= 1) {
+			width = canvasw;
+			height = width / ratio;
+			dx = 0;
+			dy = (canvash - height)/2;
+		    } else {
+			height = canvash;
+			width = height * ratio;
+			dy = 0;
+			dx = (canvasw - width)/2;
+		    }
+		    
+		    console.log("Snapshot resolution: " + width + "x" + height + " for:" + mUsedPlayer);
+
+		    context = element.getContext('2d');
+		    if (context != null) {
+			context.fillRect(dx, dy, width, height);
+			context.drawImage(videotag, dx, dy, width, height);
+		    }
+		}
+	    }
+	}
+
 	
 	self.setPosition = function(t){
 		mPosition = t;
@@ -7529,14 +7818,108 @@ window.CloudPlayer = function(elid, options){
 		return mPosition == -1 && !mStopped;
 	}
 
+	self.play = function(event){
+		if ( mPlaying ){
+			self.stop("by_play");
+		}
+		if (self.mSrc.type != 'camera') {
+			self._showerror(CloudReturnCode.ERROR_INVALID_SOURCE);
+			return;
+		}
+		mUniqPlay = Math.random();
+		mEvent = event;
+		console.warn("[PLAYER] mUniqPlay: " + mUniqPlay);
+		//el_stop.style.display = "inline-block";
+		el_pause.classList.remove('hidden');
+		el_pause.classList.remove('play');
+		mElementPlay.style.display = "none";
+		
+		mStopped = false;
+		mPlaying = true;
+		mPausing = false;
+		_stopPolingTime();
+		_startPolingTime();
+		self._reset_players();
+		_hideerror();
+		
+		// reset position to start of range
+		if (self.isRange() && mPosition == -1 && CloudHelpers.getCurrentTimeUTC() > mRangeMax) {
+			mPosition = mRangeMin;
+		}
+
+		// reset position to start of range
+		if (self.isRange() && mPosition > mRangeMax) {
+			mPosition = mRangeMin;
+		}
+
+		if(mPosition == -1){
+			_loadLiveUrl(mUniqPlay);
+			mCallbacks.executeCallbacks(CloudPlayerEvent.POSITION_JUMPED, {new_pos: CloudHelpers.getCurrentTimeUTC()});
+		}else{
+			console.warn("Try load records from " + CloudHelpers.formatUTCTime(mPosition));
+			_loadRecords(mUniqPlay);
+		}
+		_showloading();
+	}
+	
+	self.pause = function(event) {
+	    mStopped = false;
+
+	    if (mPausing == false) {
+		mPausing = true;
+		mPlaying = false;
+		el_pause.classList.add('play');
+		if (mPosition == -1) {
+		    if ( self.mPlayerFormat == 'webrtc'){
+			if (mWebRTC0_Player != null) {
+			    mWebRTC0_Player.pause();
+			} else if (mWebRTC2_Player != null) {
+			    mWebRTC2_Player.pause();
+			}
+		    } else {
+			self.vjs.pause();
+		    }
+		} else {
+		    mPlaybackPlayer1.pause();
+		    mPlaybackPlayer2.pause();
+		}
+	    } else {
+		mPausing = false;
+		mPlaying = true;
+		el_pause.classList.remove('play');
+		if (mPosition == -1) {
+		    if ( self.mPlayerFormat == 'webrtc'){
+			if (mWebRTC0_Player != null) {
+			    mWebRTC0_Player.play();
+			} else if (mWebRTC2_Player != null) {
+			    mWebRTC2_Player.play();
+			}
+		    } else {
+			self.vjs.play();
+		    }
+		} else {
+		    mPlaybackPlayer1.play();
+		    mPlaybackPlayer2.play();
+		
+		}
+	    }
+	}
+	
 	self.stop = function(who_call_stop){
 		console.log("[PLAYER] stop called " + who_call_stop);
 		mUniqPlay = null; // stop any async requests or ignore results
 		mStopped = true;
 		mPlaying = false;
+		mPausing = false;
 		mLiveModeAutoStart = false;
 		
-		if ( ((who_call_stop === 'by_webrtc2_error') || (who_call_stop === 'by_webrtc0_error')) || ( (who_call_stop === 'by_setError')&&(self.mPlayerFormat === 'webrtc')) ) {
+		if ((	   (who_call_stop === 'by_webrtc2_error') 
+			|| (who_call_stop === 'by_webrtc0_error')
+		    ) 
+		    || (   (who_call_stop === 'by_setError') 
+			&& (self.mPlayerFormat === 'webrtc')
+		    ) 
+		) {
 		    self.mPlayerFormat = 'html5';
 		}
 		
@@ -7567,6 +7950,7 @@ window.CloudPlayer = function(elid, options){
 
 		el_stop.style.display = "none";
 		mElementPlay.style.display = "inline-block";
+		el_pause.classList.add('hidden');
 		_stopPolingTime();
 		clearInterval(mExpireHLSTimeInterval);
 		self._stopPolingMediaTicket();
@@ -7590,7 +7974,7 @@ window.CloudPlayer = function(elid, options){
 		clearInterval(self.currentTime);
 		clearInterval(mPolingCameraStatus);
 		self.vjs.dispose();
-		self.vjs2.dispose();
+		//self.vjs2.dispose();
 		delete window._cloudPlayers[self.elid];
 		
 		self.player.onwebkitfullscreenchange = null;
@@ -7669,7 +8053,7 @@ window.CloudPlayer = function(elid, options){
 		
 		var _players = [];
 		_players.push(document.getElementById(elid + '_vjs'));
-		_players.push(document.getElementById(elid + '_vjs2'));
+		//_players.push(document.getElementById(elid + '_vjs2'));
 		_players.push(mNativeVideo1_el);
 		_players.push(mNativeVideo2_el);
 		_players.push(self.player.getElementsByClassName('cloudplayer-webrtc')[0]);
@@ -7891,7 +8275,7 @@ window.CloudPlayer = function(elid, options){
 
 		        var muted = (v == 0)? true : false;
 			player_native_hls	= document.getElementById(self.elid+"_native_hls");
-			player_vjs2		= document.getElementById(self.elid+"_vjs2");
+			//player_vjs2		= document.getElementById(self.elid+"_vjs2");
 			player_vjs              = document.getElementById(self.elid+"_vjs");
 			player_nv1		= document.getElementById(self.elid+"_nv1");
 			player_nv2		= document.getElementById(self.elid+"_nv2");
@@ -7899,15 +8283,15 @@ window.CloudPlayer = function(elid, options){
 	
 
 			if(player_native_hls != null && typeof player_native_hls !== "undefined") player_native_hls.muted = muted;
-			if(player_vjs2 != null && typeof player_vjs2       !== "undefined") player_vjs2.muted = muted;
+			//if(player_vjs2 != null && typeof player_vjs2       !== "undefined") player_vjs2.muted = muted;
 			if(player_vjs != null && typeof player_vjs	     !== "undefined") player_vjs.muted = muted;
 			if(player_nv1 != null && typeof player_nv1	     !== "undefined") player_nv1.muted = muted;
 			if(player_nv2 != null && typeof player_nv2	     !== "undefined") player_nv2.muted = muted;
 
 			self.vjs.muted(muted);
-			self.vjs2.muted(muted);
+			//self.vjs2.muted(muted);
 			self.vjs.volume(v);
-			self.vjs2.volume(v);
+			//self.vjs2.volume(v);
 
 			mPlaybackPlayer1.volume(v);
 			mPlaybackPlayer2.volume(v);
@@ -8060,7 +8444,11 @@ window.CloudPlayer = function(elid, options){
 
 	self.WebRTC0_autoplayBlocked = function() {
 		_stopPolingTime();
-		try{mWebRTC0_Player.stopWS();}catch(e){console.warn("WebRTC0_autoplayBlocked: skip error", e);}
+		try {
+		    mWebRTC0_Player.stopWS();
+		} catch(e) {
+		    console.warn("WebRTC0_autoplayBlocked: skip error", e);
+		}
 		mTimeWaitStartStream = 0;
 		// TODO show PlayButton
 		console.warn('_vjs_play. is mobile or autoplay not allowed. show big button');
@@ -8112,7 +8500,7 @@ window.CloudPlayer = function(elid, options){
 
 		// TODO keep player element
 		self.vjs.el().style.display = "none";
-		self.vjs2.el().style.display = "none";
+		//self.vjs2.el().style.display = "none";
 		mNativeHLS_el.style.display = "none";
 		mWebRTC_el.style.display = "block";
 		if(!window['CloudPlayerWebRTC0']){
@@ -8132,7 +8520,11 @@ window.CloudPlayer = function(elid, options){
 
 	self.WebRTC2_autoplayBlocked = function() {
 		_stopPolingTime();
-		try{mWebRTC2_Player.stopWS();}catch(e){console.warn("WebRTC2_autoplayBlocked: skip error", e);}
+		try {
+		    mWebRTC2_Player.stopWS();
+		} catch(e) {
+		    console.warn("WebRTC2_autoplayBlocked: skip error", e);
+		}
 		mTimeWaitStartStream = 0;
 		// TODO show PlayButton
 		console.warn('_vjs_play. is mobile or autoplay not allowed. show big button');
@@ -8164,7 +8556,7 @@ window.CloudPlayer = function(elid, options){
 */
 		// TODO keep player element
 		self.vjs.el().style.display = "none";
-		self.vjs2.el().style.display = "none";
+		//self.vjs2.el().style.display = "none";
 		mNativeHLS_el.style.display = "none";
 		mWebRTC_el.style.display = "block";
 		if(!window['CloudPlayerWebRTC2']){ // webrtc2
@@ -8236,11 +8628,17 @@ window.CloudPlayer = function(elid, options){
 				console.warn("[PLAYER]  _uniqPlay not current [loadeddata]");
 				return;
 			}
+			
 			_hideloading();
 			_initZoomControls();
 			_initVolumeControls();
 			_vjs_play_live();
 		});
+
+		self.vjs.on('playing', function() {
+			_beforePlay();
+		});
+
 
 		self.vjs.off('loadedmetadata');
 		self.vjs.on('loadedmetadata', function() {
@@ -8257,6 +8655,7 @@ window.CloudPlayer = function(elid, options){
 
 		_stopPolingTime();
 		_startPolingTime();
+		
 		if (CloudHelpers.isChrome() && !CloudHelpers.autoPlayAllowed) {
 			_vjs_play_live();
 		} else {
@@ -8281,16 +8680,18 @@ window.CloudPlayer = function(elid, options){
 */
 		// TODO keep player element
 		self.vjs.el().style.display = "none";
-		self.vjs2.el().style.display = "none";
+		//self.vjs2.el().style.display = "none";
 		mWebRTC_el.style.display = "none";
 		mNativeHLS_el.style.display = "block";
 		if(!window['CloudPlayerNativeHLS']){
 			console.error("[PLAYER]  Not found module CloudPlayerNativeHLS");
 			return;
 		}
-
+		
+		
 		mNativeHLS_Player = new CloudPlayerNativeHLS(mNativeHLS_el, live_urls.hls);
 		mNativeHLS_Player.play();
+		_beforePlay();
 		_startPolingTime();
 	}
 
@@ -8342,10 +8743,12 @@ window.CloudPlayer = function(elid, options){
 				console.warn("_uniqPlay not current [loadeddata]");
 				return;
 			}
+			
 			_hideloading();
 			_initZoomControls();
 			_initVolumeControls();
 			_vjs_play_live();
+
 			if (CloudHelpers.isSafari()) {
 				mSafariAndHlsNotStarted = 'loadeddata';
 			}
@@ -8361,6 +8764,7 @@ window.CloudPlayer = function(elid, options){
 			if (CloudHelpers.isSafari() && mSafariAndHlsNotStarted === 'loadeddata') {
 				mSafariAndHlsNotStarted = 'playing';
 			}
+			_beforePlay();
 		});
 
 		self.vjs.off('pause');
@@ -8374,6 +8778,7 @@ window.CloudPlayer = function(elid, options){
 
 		_stopPolingTime();
 		_startPolingTime();
+		
 		if (CloudHelpers.isChrome() && !CloudHelpers.autoPlayAllowed) {
 			_vjs_play_live();
 		} else {
@@ -8556,6 +8961,7 @@ window.CloudPlayer = function(elid, options){
 
 	self._reset_players = function() {
 		console.log("_reset_players");
+		//self.vjs.reset();
 		self.vjs.reset();
 		self.vjs.controls(false);
 		self.vjs.muted(true);
@@ -8563,12 +8969,12 @@ window.CloudPlayer = function(elid, options){
 		self.vjs.volume(0);
 		self.vjs.el().style.display = "";
 		
-		self.vjs2.reset();
-		self.vjs2.controls(false);
-		self.vjs2.muted(true);
-		self.vjs2.autoplay(true);
-		self.vjs2.volume(0);
-		self.vjs2.el().style.display = "none";
+		//self.vjs2.reset();
+		//self.vjs2.controls(false);
+		//self.vjs2.muted(true);
+		//self.vjs2.autoplay(true);
+		//self.vjs2.volume(0);
+		//self.vjs2.el().style.display = "none";
 
 		mPlaybackPlayer1.reset();
 		mPlaybackPlayer1.el().style.display = "none";
@@ -8627,8 +9033,17 @@ window.CloudPlayer = function(elid, options){
 	self.player.addEventListener('touchstart', self.restartTimeout, true);
 	
 
-	mElementPlay.onclick = self.play;
-	el_stop.onclick = self.stop;
+	mElementPlay.onclick = function() {
+	    self.play('by_button_click');
+	}
+	
+	el_pause.onclick = function() {
+	    self.pause('by_button_click');
+	}
+	
+	el_stop.onclick = function() {
+	    self.stop('by_button_click');
+	}
 	
 	self.size = function(width, height){
 		// redesign
@@ -8762,6 +9177,157 @@ window.CloudPlayer = function(elid, options){
 }
 
 CloudPlayer.POSITION_LIVE = -1;
+
+/*-------MODEL-------*/
+
+var CloudShareClipModel = function CloudShareClipModel( controller) {
+    this.controller = controller;
+    this.camera = null;
+    this.accessToken = null;
+};
+
+CloudShareClipModel.prototype.createClip = function ( cloudcamera, accessToken, clipname, start_time, end_time, delete_at ) {
+    if(cloudcamera != null) {
+	this.camera = cloudcamera;
+	this.accessToken = accessToken;
+	var self = this;
+    
+	this.camera.createClip (clipname, start_time, end_time, delete_at, this.accessToken)
+	.done(function(r){
+	    var clipid = r.id;
+	    var status = r.status;
+	    
+	    if (status === "pending") {
+		setTimeout( function() { self.clipStatus(clipid) }, 3000 );
+	    } else if (status === "done") {
+		self.controller.processDone(status, r);
+	    } else {
+		self.controller.processDone(status);
+	    }
+	})
+	.fail(function(r){
+	    self.controller.processDone('error');
+	});    
+    }
+}
+
+CloudShareClipModel.prototype.clipStatus = function ( clipid ) {
+    var self = this;
+    if (this.camera && this.camera !== undefined) {
+	this.camera.getClip(clipid, this.accessToken)
+	.done(function(r){
+	    console.log('Clip Status OK:' + r.status);	
+	    var status = r.status;
+	    
+	    if ((status === "") || (status === "pending")){
+		setTimeout( function() { self.clipStatus(clipid) }, 3000 );
+	    } else if (status === "done") {
+		self.controller.processDone(status, r);
+	    } else {
+		self.controller.processDone(status);
+	    }
+	})
+	.fail(function(r){
+	    self.controller.processDone('error');
+	});
+    }
+}
+
+/*-------VIEW--------*/
+
+var CloudShareClipView = function CloudShareClipView(element) {
+    this.element = element;
+};
+
+
+CloudShareClipView.prototype.initDraw = function initDraw(controller) {
+    this.element.innerHTML = 
+    	'<div class= "CloudShareClipContainer">'
+    +	'</div>';
+    var element = this.element;
+
+    this.container = this.element.getElementsByClassName('CloudShareClipContainer')[0]; 
+
+    this.render(controller);
+}
+
+
+CloudShareClipView.prototype.render = function render(controller) {
+	var self	= this;
+}
+
+CloudShareClipView.prototype.showWait = function showWait(isWait) {
+    var element = this.container;
+
+    if (isWait) {
+        $(element).addClass("waitdata");
+    } else {
+        $(element).removeClass("waitdata");    
+    }
+};
+
+
+/*------CONTROLLER--*/
+var CloudShareClipController = function CloudShareClipController( element) {
+    if (element === undefined) {
+	return;
+    }
+
+    this.callback_func = null;
+    
+    this.inProcess = false;
+    
+    this.clModel	= new CloudShareClipModel(this);
+    this.clView		= new CloudShareClipView(element);
+
+    this.clView.element.createClip	= this.createClip.bind(this);
+
+    this.clView.initDraw(this);
+};
+
+CloudShareClipController.prototype.processDone = function processDone ( description, clipinfo ) {
+    this.inProcess = false;
+    if (this.callback_func) {
+	this.callback_func( this.inProcess ,description, clipinfo);
+    }
+}
+
+CloudShareClipController.prototype.createClip = function createClip ( cloudcamera, accessToken, callback, start_time, clip_duration) {
+    if (callback !== undefined) {
+	this.callback_func = callback;
+    }   
+
+    if (this.inProcess) {
+	console.warn('CloudShareClip in process..');
+	if (this.callback_func) {
+	    this.callback_func( this.inProcess, 'CloudShareClip in process..');
+	}
+	return;
+    }
+    this.inProcess = true;
+
+    if (this.callback_func) {
+	this.callback_func( this.inProcess, 'CloudShareClip started');
+    }
+     
+    if (clip_duration === undefined) {
+	clip_duration = 20*1000; //ms
+    }
+    var start_delta = 10*1000; //ms
+    var end_time = start_time + clip_duration - start_delta;
+    var clipname = 'clip_' + start_time;
+    var now = new Date();
+    var delete_at = now.getTime() + 15*60*1000; //delete at 15min after create
+    
+    console.log('DEBUG create clip ' + cloudcamera.getName() + ' time:' +  start_time + ' dur:' + clip_duration);
+    this.clModel.createClip( cloudcamera, accessToken, clipname, start_time - start_delta, end_time, delete_at );
+}
+
+CloudShareClipController.prototype.showWait = function showWait (isWait) {
+    console.log('DEBUG swhoWait '+ isWait);
+    this.clView.showWait(isWait);
+};
+
 
 window.CloudPlayerNativeHLS = function(videoEl, hlsUrl){
 	var mVideoEl = videoEl;
@@ -9188,6 +9754,18 @@ window.CloudPlayerWebRTC0 = function(videoEl, srv, rtmpUrl){
 		});
     }
 
+	self.pause = function() {
+	    if (mVideoEl && mVideoEl.src) {
+		mVideoEl.pause();
+	    }
+	}
+
+	self.play = function() {
+	    if (mVideoEl && mVideoEl.src) {
+		mVideoEl.play();
+	    }
+	}
+
 	self.resetState = function() {
 		// This will call onServerClose()
 		ws_conn.close();
@@ -9411,6 +9989,18 @@ window.CloudPlayerWebRTC2 = function(objVideoEl, strConnectionUrl, arrIceServers
 		self.resetState();
 	}
 
+    self.pause = function() {
+	if (m_objVideoEl && m_objVideoEl.srcObject) {
+	    m_objVideoEl.pause();
+	}
+    }
+
+    self.play = function() {
+	if (m_objVideoEl && m_objVideoEl.srcObject) {
+	    m_objVideoEl.play();
+	}
+    }
+    
     self.reset = function() {
         if (m_objVideoEl && m_objVideoEl.srcObject) {
             m_objVideoEl.pause();
@@ -11685,8 +12275,8 @@ window.CloudSessionTimeline = function(viewid){
 window.CloudSDK = window.CloudSDK || {};
 
 // Automaticlly generated
-CloudSDK.version = '3.0.18';
-CloudSDK.datebuild = '200702';
+CloudSDK.version = '3.1.2';
+CloudSDK.datebuild = '201014';
 console.log('CloudSDK.version='+CloudSDK.version + '_' + CloudSDK.datebuild);
 
 // Wrapper for VXGCloudPlayer & CloudSDK
@@ -11749,7 +12339,6 @@ window.CloudPlayerSDK = function(playerElementID, o) {
                 self.sharedKey = obj.token;
                 self.mCameraID = obj.camid;
             }
-
 			if(obj.svcp && obj.svcp != ''){
 				self.svcp_url = obj.svcp;
             }
@@ -11788,6 +12377,7 @@ window.CloudPlayerSDK = function(playerElementID, o) {
                 self.cm.getCamera(self.mCameraID).done(function (cam) {
                     self.camera = cam;
                     self.player.setSource(self.camera);
+                    self.player.setAccessToken(key);
                     console.log(self.camera)
                     console.log(self.camera._origJson())
                     self.player.setPosition(mPosition);
@@ -11837,7 +12427,7 @@ window.CloudPlayerSDK = function(playerElementID, o) {
         // TODO: what to do here ...
     };
 
-    self.close = function(){
+	self.close = function(){
         self.player.stop("by_plrsdk_2");
         self.player.close();
         self.player.player.innerHTML = '';
