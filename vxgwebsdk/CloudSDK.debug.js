@@ -1,7 +1,19 @@
 // CloudSDK.debug.js
-// version: 3.1.2
-// date-of-build: 201014
+// version: 3.1.4
+// date-of-build: 201209
 // copyright (c) VXG Inc
+// Includes gl-matrix  <https://github.com/toji/gl-matrix>
+// Available under MIT License 
+// <https://github.com/toji/gl-matrix/blob/master/LICENSE.md> 
+// Includes rangeslider.js <https://github.com/andreruffert/rangeslider.js>
+// Available under MIT License 
+// <https://github.com/andreruffert/rangeslider.js/blob/develop/LICENSE.md> 
+// Includes momentjs  <https://github.com/moment/moment/>
+// Available under MIT License 
+// <https://github.com/moment/moment/blob/develop/LICENSE> 
+// Includes moment-timezone <https://github.com/moment/moment-timezone/>
+// Available under MIT License 
+// <https://github.com/moment/moment-timezone/blob/develop/LICENSE> 
 
 
 window.Log = function(elid){
@@ -4187,6 +4199,12 @@ CloudReturnCode.ERROR_ACCESS_TOKEN_REQUIRED = {
 	text: 'Access token is required'
 }
 
+CloudReturnCode.ERROR_ACCESS_TOKEN_EXPIRED = {
+	name: 'ERROR_ACCESS_TOKEN_EXPIRED',
+	code: -5068,
+	text: 'Access token is expired'
+};
+
 CloudReturnCode.ERROR_NOT_AUTHORIZED = {
 	name: 'ERROR_NOT_AUTHORIZED',
 	code: -5401,
@@ -4473,7 +4491,11 @@ window.CloudShareConnection = function(options){
 		});
 		return p;
 	}
-
+	self.updateToken = function (token) {
+		if (self.mAPI) {
+			self.mAPI.token = token;
+		}
+	}
 	self.isOpened = function(){
 		return self.mAPI != null;
 	}
@@ -6003,7 +6025,11 @@ CloudPlayerEvent.TIMELINE_END_UPDATED = {
 	text: 'Event when timeline end updated'
 };
 
-
+CloudPlayerEvent.ACCESS_TOKEN_EXPIRED_IN_5MIN = {
+	name: 'ACCESS_TOKEN_EXPIRED_IN_5MIN',
+	code: 4460,
+	text: 'Access token expired in 5 minutes'
+};
 
 
 // construct
@@ -6046,7 +6072,9 @@ window.CloudPlayer = function(elid, options){
 	var mPreferredPlayerFormat = null;
 	var f_callbackFullscreenFunc = null;
 	var mAccessToken = null;
-
+	var mAccessTokenExpire = null;
+	var mAccessTokenTimeInterval = null;
+	
 	self.timePolingLiveUrls = 15000;
 	self.player = document.getElementById(elid);
 	
@@ -6327,14 +6355,15 @@ window.CloudPlayer = function(elid, options){
 		+ '<div class="cloudplayer-share-clip" style="width:100%; height:100%; display:none;"></div>'
 		+ '<div class="allvideotags" style="width:100%; height:100%;" >'
 		+ '	<video crossorigin="anonymous" id="' + elid + '_vjs" class="video-js" preload="auto" class="video-js vjs-default-skin vjs-live vjs-fill" '
-		+ '		controls width="100%" height="100%" data-setup=\'{"aspectRatio":"16:9", "fluid": true}\''
+		+ '		controls width="100%" height="100%"' 
+//		+ '		data-setup=\'{"aspectRatio":"16:9", "fluid": true}\''
 		+ '		 muted=' + self.m.mute + ' autoplay=true preload playsinline="true"></video>'
 /*		+ '<video crossorigin="anonymous" id="' + elid + '_vjs2" class="video-js" preload="auto" class="video-js vjs-default-skin vjs-live"'
 		+ ' muted=' + self.m.mute + ' autoplay=true preload playsinline="true" ></video>'
 */	
-		+ '<video crossorigin="anonymous" id="' + elid + '_nv1" class="cloudplayer-native-video"'
+		+ '<video crossorigin="anonymous" id="' + elid + '_nv1" class="cloudplayer-native-video ' + elid + '_nv1"'
 		+ ' autoplay=true preload  playsinline="true" ></video>'
-		+ '<video crossorigin="anonymous" id="' + elid + '_nv2" class="cloudplayer-native-video"'
+		+ '<video crossorigin="anonymous" id="' + elid + '_nv2" class="cloudplayer-native-video ' + elid + '_nv2"'
 		+ ' autoplay=true preload  playsinline="true" ></video>'
 		+ '<video crossorigin="anonymous" id="' + elid + '_native_hls" class="cloudplayer-native-hls"'
 		+ ' muted=' + self.m.mute + ' autoplay=true preload  playsinline="true" ></video>'
@@ -6422,10 +6451,12 @@ window.CloudPlayer = function(elid, options){
 	var mElErrorText = self.player.getElementsByClassName('cloudplayer-error-text')[0];
 	var el_player_time = self.player.getElementsByClassName('cloudplayer-time')[0];
 	var mElBigPlayButton = self.player.getElementsByClassName('cloudplayer-big-play-button')[0];
-	mWebRTC_el = self.player.getElementsByClassName('cloudplayer-webrtc')[0];
-	mNativeHLS_el = self.player.getElementsByClassName('cloudplayer-native-hls')[0];
-	mNativeVideo1_el = document.getElementById(elid + '_nv1');
-	mNativeVideo2_el = document.getElementById(elid + '_nv2');
+	var mWebRTC_el = self.player.getElementsByClassName('cloudplayer-webrtc')[0];
+	var mNativeHLS_el = self.player.getElementsByClassName('cloudplayer-native-hls')[0];
+	var mNativeVideo1_el = self.player.getElementsByClassName(elid + '_nv1')[0];
+	var mNativeVideo2_el = self.player.getElementsByClassName(elid + '_nv2')[0];
+	//mNativeVideo1_el = document.getElementById(elid + '_nv1');
+	//mNativeVideo2_el = document.getElementById(elid + '_nv2');
 	var mElPlrType = self.player.getElementsByClassName('cloudplayer-info-playertype')[0];
 	var mElSettingsOpen = self.player.getElementsByClassName('cloudplayer-settings')[0];
 	var mElSettingsClose = self.player.getElementsByClassName('cloudplayer-info-close')[0];
@@ -6532,7 +6563,8 @@ window.CloudPlayer = function(elid, options){
 	}
 
 	function _applySpeed(speed){
-		var p = document.getElementById(player.playerElementID).getElementsByClassName('cloudplayer-native-video');
+		//var p = document.getElementById(player.playerElementID).getElementsByClassName('cloudplayer-native-video');
+		var p = el_player.getElementsByClassName('cloudplayer-native-video');
 		for (var i=0;i<p.length;i++)
 			p[i].defaultPlaybackRate=p[i].playbackRate=speed;
 	}
@@ -7419,6 +7451,30 @@ window.CloudPlayer = function(elid, options){
 
 	self.setAccessToken = function( accessToken) {
 	    mAccessToken = accessToken;
+	    
+	}
+	
+	self.checkTokenExpire = function() {
+		var now		= CloudHelpers.getCurrentTimeUTC();
+		var expire	= CloudHelpers.parseUTCTime(mAccessTokenExpire);
+			
+		var delta = expire - now;
+		if (delta < 5*60*1000) {
+			mCallbacks.executeCallbacks(CloudPlayerEvent.ACCESS_TOKEN_EXPIRED_IN_5MIN, delta);
+		} else {
+			setTimeout(function(){
+				self.checkTokenExpire();
+			}, 5000);
+		}
+	}
+	
+	self.setAccessTokenExpire = function( expire ) {
+		mAccessTokenExpire = expire;
+		if ((mAccessTokenExpire != null) && (mAccessTokenExpire !== undefined)) {
+			setTimeout (function(){
+				self.checkTokenExpire();
+			}, 5000 );
+		}
 	}
 
 	self.setSource = function(src){
@@ -7619,17 +7675,25 @@ window.CloudPlayer = function(elid, options){
 		return sMode;
 	}
 
+	var shareClipInterval = null;
+	
 	self._shareClipCallback = function( inProcess, description, clipinfo) {
 	    var el_controls_get_clip	= self.player.getElementsByClassName('cloudplayer-get-clip')[0];
 	    if (inProcess) {
 		if(description === 'CloudShareClip in process..'){
-		    alert('Clip sharing in proccess..');
+		    alert('The video is being prepared ...');
 		}
 		el_controls_get_clip.classList.add('inprocess');
 	    } else {
+		if (shareClipInterval != null) {
+			clearInterval(shareClipInterval);
+		}
+		el_controls_get_clip.classList.remove('step1');
+		el_controls_get_clip.classList.remove('step2');
+		el_controls_get_clip.classList.remove('step3');
+		el_controls_get_clip.classList.remove('step4');
 		el_controls_get_clip.classList.remove('inprocess');
 	    }
-	    
 	    if (clipinfo !== undefined) {
 		console.log("ShareClipInfo: " + clipinfo.url);
 		var downloadLink = document.createElement('a');
@@ -7644,6 +7708,9 @@ window.CloudPlayer = function(elid, options){
 	    var cloudcamera = self.mSrc;
 	    var position = mPosition;
 	    if (position == -1) {
+		//while clipshare is possible for live mode, it can needs alot of time to prepare clip, so it's disabled for the moment
+		alert("Select a position with the recorded video on the timeline");
+		return;
 		var now = new Date();
 		position = now.getTime();
 	    }
@@ -7654,6 +7721,31 @@ window.CloudPlayer = function(elid, options){
 	    &&  (mAccessToken && (mAccessToken !== undefined))
 	    ) { 
 		shareclip.createClip( cloudcamera, mAccessToken, self._shareClipCallback, position );
+		shareClipInterval = setInterval( function(){
+			var el_controls_get_clip = self.player.getElementsByClassName('cloudplayer-get-clip')[0];
+			if (el_controls_get_clip.classList.contains('inprocess')) {
+				if (el_controls_get_clip.classList.contains('step1')) {
+					el_controls_get_clip.classList.remove('step1');
+					el_controls_get_clip.classList.add('step2');
+				} else if (el_controls_get_clip.classList.contains('step2')) {
+					el_controls_get_clip.classList.remove('step2');
+					el_controls_get_clip.classList.add('step3');
+				} else if (el_controls_get_clip.classList.contains('step3')) {
+					el_controls_get_clip.classList.remove('step3');
+					el_controls_get_clip.classList.add('step4');
+				} else if (el_controls_get_clip.classList.contains('step4')) {
+					el_controls_get_clip.classList.remove('step4');
+					el_controls_get_clip.classList.add('step1');
+				} else {
+					el_controls_get_clip.classList.add('step1');
+				}
+			} else {
+				el_controls_get_clip.classList.remove('step1');
+				el_controls_get_clip.classList.remove('step2');
+				el_controls_get_clip.classList.remove('step3');
+				el_controls_get_clip.classList.remove('step4');
+			}
+		}, 500);
 	    }
 	}
 
@@ -7661,8 +7753,10 @@ window.CloudPlayer = function(elid, options){
 	    var element = self.player.getElementsByClassName('cloudplayer-snapshot')[0];
 	    var allvideotags = self.player.getElementsByClassName('allvideotags')[0];
 	    
-	    element.setAttribute('width', allvideotags.clientWidth);
-	    element.setAttribute('height', allvideotags.clientHeight);
+	    if (element !== undefined) {
+		element.setAttribute('width', allvideotags.clientWidth);
+		element.setAttribute('height', allvideotags.clientHeight);
+	    }
 	}
 	self._onResize();
 
@@ -9516,12 +9610,12 @@ window.CloudPlayerNativeVideo = function(elId){
 
 	self.ready = function(ready) {
 		ready();
-		console.error(_TAG + "TODO ready");
+		console.log(_TAG + "TODO ready");
 	}
 
 	self.muted = function(b) {
 		mVideoEl.muted = b;
-		console.error(_TAG + "TODO muted");
+		console.log(_TAG + "TODO muted");
 	}
 
 	self.volume = function(v) {
@@ -9544,7 +9638,7 @@ window.CloudPlayerNativeVideo = function(elId){
 	}
 
 	self.controls = function(b) {
-		console.error(_TAG + "TODO controls");
+		console.log(_TAG + "TODO controls");
 	}
 
 	self.autoplay = function(b) {
@@ -12275,8 +12369,8 @@ window.CloudSessionTimeline = function(viewid){
 window.CloudSDK = window.CloudSDK || {};
 
 // Automaticlly generated
-CloudSDK.version = '3.1.2';
-CloudSDK.datebuild = '201014';
+CloudSDK.version = '3.1.4';
+CloudSDK.datebuild = '201209';
 console.log('CloudSDK.version='+CloudSDK.version + '_' + CloudSDK.datebuild);
 
 // Wrapper for VXGCloudPlayer & CloudSDK
@@ -12296,6 +12390,8 @@ window.CloudPlayerSDK = function(playerElementID, o) {
     self.svcp_url = null;
     self.sharedKey = null;
     self.playerElementID = null;
+    self.tokenExpire = null;
+    
     window['_CloudPlayerSDK'] = window['_CloudPlayerSDK'] || {};
 
     if (!playerElementID || playerElementID === '') throw 'Player container element ID is required.';
@@ -12322,92 +12418,122 @@ window.CloudPlayerSDK = function(playerElementID, o) {
 
 
     self.setSource = function (key) {
-        if (!key || key === '') {
-//            var msg = 'Access token is required';
-//            console.error(msg);
-            self.player._showerror(CloudReturnCode.ERROR_ACCESS_TOKEN_REQUIRED);
-//            self.player._setError(msg);
-//            self.player.showErrorText(msg);
-            return CloudReturnCode.ERROR_ACCESS_TOKEN_REQUIRED;
-        }
-        var camid = 0;
-        try {
-            var obj = atob(key);
-            obj = JSON.parse(obj);
-            console.log("[CloudPlayerSDK] access_token: ", obj);
-            if (obj.token && obj.camid && obj.access && obj.token !== '' && obj.camid !== '' && obj.access !== ''){
-                self.sharedKey = obj.token;
-                self.mCameraID = obj.camid;
-            }
-			if(obj.svcp && obj.svcp != ''){
-				self.svcp_url = obj.svcp;
-            }
-            
-            // obj.api = obj.api || "web.skyvr.videoexpertsgroup.com";
-            // TODO move to CloudHelpers function and create tests
-            if(obj.api && obj.api != ''){
-                self.svcp_url = (location.protocol=="file:"?"http:":location.protocol) + "//" + obj.api;
-                if(location.protocol == "http:" || location.protocol == "file:"){
-                    self.svcp_url += (obj.api_p ? ":" + obj.api_p : "");
-                }else if(location.protocol == "https:"){
-                    self.svcp_url += (obj.api_sp ? ":" + obj.api_sp : "");
-                }
-                self.svcp_url += "/";
-                if (obj.path && obj.path != '') {
-                    self.svcp_url += obj.path;
-                    self.svcp_url += "/";
-                }
-            }
-        } catch (err) {
-//            var msg = 'Invalid access token format';
-//            console.error(msg);
-            self.player._showerror(CloudReturnCode.ERROR_INVALID_ACCESS_TOKEN_FORMAT);
-//            self.player.showErrorText(msg);
-            return CloudReturnCode.ERROR_INVALID_ACCESS_TOKEN_FORMAT;
-        }
+	if (!key || key === '') {
+//		var msg = 'Access token is required';
+//		console.error(msg);
+		self.player._showerror(CloudReturnCode.ERROR_ACCESS_TOKEN_REQUIRED);
+//		self.player._setError(msg);
+//		self.player.showErrorText(msg);
+		return CloudReturnCode.ERROR_ACCESS_TOKEN_REQUIRED;
+	}
+	var camid = 0;
+	var same_svcp = false;
+	var same_camid = false;
+	try {
+		var obj = atob(key);
+		obj = JSON.parse(obj);
+		console.log("[CloudPlayerSDK] access_token: ", obj);
+		self.tokenExpire = null;
+		if (obj.expires) {
+			self.tokenExpire = obj.expires;
+			var expire	= CloudHelpers.parseUTCTime(self.tokenExpire);
+			var dtime	= new Date();
+			var now 	= dtime.getTime();
+			
+			if ((expire - now) < 0) {
+				self.player._showerror(CloudReturnCode.ERROR_ACCESS_TOKEN_EXPIRED);
+				return CloudReturnCode.ERROR_ACCESS_TOKEN_EXPIRED;
+			}
+		}
+		if (obj.token && obj.camid && obj.access && obj.token !== '' && obj.camid !== '' && obj.access !== ''){
+			self.sharedKey = obj.token;
+			if (self.mCameraID == obj.camid) {
+				same_camid = true;
+			}
+			self.mCameraID = obj.camid;
+		}
+		if(obj.svcp && obj.svcp != ''){
+			if (self.svcp_url == obj.svcp) {
+				same_svcp = true;
+			}
+			self.svcp_url = obj.svcp;
+		}
+//		obj.api = obj.api || "web.skyvr.videoexpertsgroup.com";
+//		TODO move to CloudHelpers function and create tests
+		if(obj.api && obj.api != ''){
+			var l_svcp_url = '';
+			l_svcp_url = (location.protocol=="file:"?"http:":location.protocol) + "//" + obj.api;
+			if(location.protocol == "http:" || location.protocol == "file:"){
+				l_svcp_url += (obj.api_p ? ":" + obj.api_p : "");
+			} else if(location.protocol == "https:"){
+				l_svcp_url += (obj.api_sp ? ":" + obj.api_sp : "");
+			}
+			l_svcp_url += "/";
+			if (obj.path && obj.path != '') {
+				l_svcp_url += obj.path;
+				l_svcp_url += "/";
+			}
+			if (self.svcp_url == l_svcp_url) {
+				same_svcp = true;
+			}
+			self.svcp_url = l_svcp_url;
+		}
+	} catch (err) {
+//		var msg = 'Invalid access token format';
+//		console.error(msg);
+		self.player._showerror(CloudReturnCode.ERROR_INVALID_ACCESS_TOKEN_FORMAT);
+//		self.player.showErrorText(msg);
+	}
 
-        self.player.stop("by_plrsdk_3");
+	if (same_camid && same_svcp) {
+		console.log("DEBUG: Same camid and svcp for newly token");
+		self.conn.updateToken(self.sharedKey);
+		self.player.setAccessToken(key);
+		self.player.setAccessTokenExpire(self.tokenExpire);
+	} else {
+		self.player.stop("by_plrsdk_3");
 		if(self.svcp_url != null){ // if server is custom
 			self.conn.ServiceProviderUrl = self.svcp_url.replace('file://','https://');
 		}
-        self.conn.open(self.sharedKey).done(function (cam) {
-        
-            if (self.conn) {
-                self.cm = new CloudCameraList(self.conn);
-                self.cm.getCamera(self.mCameraID).done(function (cam) {
-                    self.camera = cam;
-                    self.player.setSource(self.camera);
-                    self.player.setAccessToken(key);
-                    console.log(self.camera)
-                    console.log(self.camera._origJson())
-                    self.player.setPosition(mPosition);
-                    if (self.timeline && mPosition != -1) {
-                        self.timeline.moveToPosition(mPosition);
-                    }
-                    self.player.play();
-                }).fail(function (err) {
-                    console.log(err);
-                    self.player._showerror(CloudReturnCode.ERROR_CHANNEL_NOT_FOUND);
-//                    self.player._setError("Channel is not found");
-//                    self.player.showErrorText("Channel is not found");
-                    // TODO callback error
-                });
-                //return CloudReturnCode.OK;
-            }
-        }).fail(function (err) {
-            self.player._showerror(CloudReturnCode.ERROR_NETWORK_ERROR);
-//            self.player._setError("Network error");
-//            self.player.showErrorText("Network error");
-        });        
-        //self.player.showErrorText("Access token invalid");
-        //return CloudReturnCode.ERROR_NO_CLOUD_CONNECTION;
+		self.conn.open(self.sharedKey).done(function (cam) {
+			if (self.conn) {
+				self.cm = new CloudCameraList(self.conn);
+				self.cm.getCamera(self.mCameraID).done (function (cam) {
+					self.camera = cam;
+					self.player.setSource(self.camera);
+					self.player.setAccessToken(key);
+					self.player.setAccessTokenExpire(self.tokenExpire);
+					console.log(self.camera)
+					console.log(self.camera._origJson())
+					self.player.setPosition(mPosition);
+					if (self.timeline && mPosition != -1) {
+						self.timeline.moveToPosition(mPosition);
+					}
+					self.player.play();
+				}).fail(function (err) {
+					console.log(err);
+					self.player._showerror(CloudReturnCode.ERROR_CHANNEL_NOT_FOUND);
+//					self.player._setError("Channel is not found");
+//					self.player.showErrorText("Channel is not found");
+//					TODO callback error
+				});
+//				return CloudReturnCode.OK;
+			}
+		}).fail(function (err) {
+			self.player._showerror(CloudReturnCode.ERROR_NETWORK_ERROR);
+//			self.player._setError("Network error");
+//			self.player.showErrorText("Network error");
+		});        
+		//self.player.showErrorText("Access token invalid");
+		//return CloudReturnCode.ERROR_NO_CLOUD_CONNECTION;
+	}
     };
 
-    self.getSource = function () {
-        if (!self.sharedKey)
-            return CloudReturnCode.ERROR_SOURCE_NOT_CONFIGURED;
-        return self.sharedKey;
-    };
+	self.getSource = function () {
+		if (!self.sharedKey)
+			return CloudReturnCode.ERROR_SOURCE_NOT_CONFIGURED;
+		return self.sharedKey;
+	};
 	
 	self.play = function(){
         if (!self.camera)
@@ -12523,7 +12649,7 @@ window.CloudPlayerSDK = function(playerElementID, o) {
             return;
         }
         self.mOnChannelStatus_callback = callback;
-		self.player.onChannelStatus(function(plr, status){
+	self.player.onChannelStatus(function(plr, status){
             self.mOnChannelStatus_callback(self, status);
         });
     }
