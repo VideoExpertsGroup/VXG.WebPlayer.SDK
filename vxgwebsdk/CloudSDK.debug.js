@@ -1,6 +1,6 @@
 // CloudSDK.debug.js
-// version: 3.1.6
-// date-of-build: 210210
+// version: 3.1.7
+// date-of-build: 210302
 // copyright (c) VXG Inc
 // Includes gl-matrix  <https://github.com/toji/gl-matrix>
 // ver: 3.3.0 // Available under MIT License 
@@ -1265,6 +1265,21 @@ window.CloudAPI = function(cloud_token, svcp_url){
 		});
 	}
 
+	self.cameraBackwardUrls = function(camid){
+		var data = {};
+		var r_url = self.endpoints.cameras + camid + '/live_urls/?media_urls=webrtc_back,rtmp_back&';
+		if(self.isShareToken()){
+			data.token = self._getCloudToken();
+		}
+		var query = CloudHelpers.mapToUrlQuery(data);
+		return self.requestWrap.request({
+			url: r_url + query,
+			type: 'GET',
+			token: self._getCloudToken(),
+			data: JSON.stringify(data),
+		});
+	}
+	
 	self.cameraStreamUrls_webrtc = function(camid){
 		var data = {};
 		var r_url = self.endpoints.cameras + camid + '/stream_urls/?';
@@ -1397,7 +1412,20 @@ window.CloudAPI = function(cloud_token, svcp_url){
 			token: self._getCloudToken(),
 		});
 	}
-
+	
+	self.cameraAudio = function(camid) {
+		var data = {};
+		if(self.isShareToken()){
+			data.token = self._getCloudToken();	
+		}
+		var query = CloudHelpers.mapToUrlQuery(data);
+		return self.requestWrap.request({
+			url: self.endpoints.cameras + camid + "/audio/?" + query,
+			type: 'GET',
+			token: self._getCloudToken(),
+		});
+	}
+	
 	self.storageRecords = function(camid, startDT, endDt){
 		var p = CloudHelpers.promise();
 		var request_data = {
@@ -4045,7 +4073,7 @@ window.CloudReturnCode = {};
 
 CloudReturnCode.OK = {
 	name: 'OK',
-	code: -5049,
+	code: 0,
 	text: 'Success'
 };
 
@@ -6084,6 +6112,7 @@ window.CloudPlayer = function(elid, options){
 	var mAccessTokenExpire = null;
 	var mAccessTokenTimeInterval = null;
 	var mPTZActions = null;
+	var isBackwardAudioStarted = false;
 	
 	self.timePolingLiveUrls = 15000;
 	self.player = document.getElementById(elid);
@@ -6128,6 +6157,8 @@ window.CloudPlayer = function(elid, options){
 		console.error("[CloudPlayer] Expected DIV tag but got " + self.player.tagName);
 		return null;
 	}
+	
+
 	
 	var mPosition = -1;
 	
@@ -6320,19 +6351,18 @@ window.CloudPlayer = function(elid, options){
 		+ '		</div>'
 		+ '</div>'
 		+ '</div>'
-		+ '<div class="cloudplayer-backwardaudio-container">'
-		+ (self.m.backwardAudio ? ''
-		+ '<object data="' + self.swf_backwardaudio + '" type="application/x-shockwave-flash" id="backwardaudio_swf_single" align="top">'
-		+ '		<param name="movie" value="' + self.swf_backwardaudio + '" />'
-		+ '		<embed type="application/x-shockwave-flash" src="' + self.swf_backwardaudio + '">'
-		+ '		<param name="allowScriptAccess" value="always"/>'
-		+ '		<param value="allowNetworking" value="all"/>'
-		+ '		<param name="menu" value="true" />'
-		+ '		<param name="wmode" value="transparent"/>'
-		+ '		<!-- param name="bgcolor" value="#ffffff" / -->'
-		+ '		<param name="menu" value="false" />'
-		+ '</object>'
-		: '')
+		+ '<div class="cloudplayer-backwardaudio-container">' + (self.m.backwardAudio ? ''
+		+ '		<object data="' + self.swf_backwardaudio + '" type="application/x-shockwave-flash" id="backwardaudio_swf_single" align="top">'
+		+ '			<param name="movie" value="' + self.swf_backwardaudio + '" />'
+		+ '			<embed type="application/x-shockwave-flash" src="' + self.swf_backwardaudio + '">'
+		+ '			<param name="allowScriptAccess" value="always"/>'
+		+ '			<param value="allowNetworking" value="all"/>'
+		+ '			<param name="menu" value="true" />'
+		+ '			<param name="wmode" value="transparent"/>'
+		+ '			<!-- param name="bgcolor" value="#ffffff" / -->'
+		+ '			<param name="menu" value="false" />'
+		+ '		</object>' : '')
+		+ '		<video class="cloudplayer-backward-webrtc" crossorigin="anonymous" autoplay=true preload playsinline="true" style="width: 10px; height: 10px; background-color: #000;"></video>'
 		+ '</div>'
 		+ '<div class="cloudplayer-calendar-container"></div>'
 		+ '<div class="cloudplayer-live-container"></div>'
@@ -6351,8 +6381,8 @@ window.CloudPlayer = function(elid, options){
 		+ '	<div class="cloudplayer-volume-down"></div>'
 		+ '	<div class="cloudplayer-volume-progress vol7"></div>'
 		+ '	<div class="cloudplayer-volume-up"></div>'
-		+ '	<div class="cloudplayer-microphone"></div>'
 		+ '	<div class="cloudplayer-right-divider"></div>'
+		+ '	<div class="cloudplayer-microphone disabled"></div>'
 		+ '	<div class="cloudplayer-get-clip" style="display: none"></div>'
 		+ '	<div class="cloudplayer-get-shot" style="display: none"></div>'
 		+ '	<div class="cloudplayer-single-element-divider"></div>'
@@ -6454,6 +6484,7 @@ window.CloudPlayer = function(elid, options){
 	var el_controls_container = self.player.getElementsByClassName('cloudplayer-controls-container')[0];
 	var el_controls_zoom_switcher = self.player.getElementsByClassName('cloudplayer-show-zoom')[0];
 	var el_controls_ptz_switcher = self.player.getElementsByClassName('cloudplayer-show-ptz')[0];
+	var el_controls_microphone = self.player.getElementsByClassName('cloudplayer-microphone')[0];
 	var el_controls_get_shot = self.player.getElementsByClassName('cloudplayer-get-shot')[0];
 	var el_controls_get_clip = self.player.getElementsByClassName('cloudplayer-get-clip')[0];
 	var el_controls_ptz_container = self.player.getElementsByClassName('cloudplayer-ptz')[0];
@@ -6595,17 +6626,31 @@ window.CloudPlayer = function(elid, options){
 		return mElError.style.display == "block";
 	}
 
-	function _showloading(){
+	var loader_to = null;
+	function _showloading( timeout ){
+		var to = Number(timeout);
+		if (Number.isNaN(to)) {
+			to = 0;
+		}
+	
 		if(self.mShowedBigPlayButton == true){
 			_hideloading();
 		} else if(!mShowedLoading){
-			el_loader.style.display = "inline-block";
-			mShowedLoading = true;
+			
+			if (to >= 0) {
+				loader_to = setTimeout( function(){
+					el_loader.style.display = "inline-block";
+					mShowedLoading = true;
+				}, to);
+			}
 		}
 	}
 
 	function _hideloading(){
 		if(mShowedLoading){
+			if (loader_to != null) {
+				clearTimeout(loader_to);
+			}
 			el_loader.style.display = "none";
 			mShowedLoading = false;
 		}
@@ -6616,7 +6661,7 @@ window.CloudPlayer = function(elid, options){
 	self.onDocumentClick = function(event) {
 		var isClickInside = el_info.contains(event.target) || mElSettingsOpen == event.target || mElSettingsOpen.contains(event.target) ||
 			mElementCalendar == event.target || mElementCalendar.contains(event.target) || 
-			el_controls_get_shot == event.target || el_controls_get_clip == event.target ||
+			el_controls_get_shot == event.target || el_controls_get_clip == event.target || el_controls_microphone == event.target ||
 			el_controls_zoom_switcher == event.target || el_controls_zoom_switcher.contains(event.target) ||
 			el_controls_zoom_container == event.target || el_controls_zoom_container.contains(event.target) ||
                         mElementCalendarButton == event.target || mElementCalendarButton.contains(event.target);
@@ -6824,6 +6869,10 @@ window.CloudPlayer = function(elid, options){
 
 	el_controls_get_shot.onclick = function(){
 		self._getSnapshot();
+	};
+	
+	el_controls_microphone.onclick = function() {
+		self._sendBackwardAudio();
 	};
 
 	el_clipcreatebtn.onclick = function(){
@@ -7132,7 +7181,7 @@ window.CloudPlayer = function(elid, options){
 					}
 				}
 				if (curr_time == self.time) {
-					_showloading();
+					_showloading( self.options.loaderTimeout || 0 );
 					mTimeWaitStartStream++;
 					if ( self.time == 0 && mTimeWaitStartStream > _timeWaitStartStreamMax) {
 						self.stop("by_poling_time_1");
@@ -7161,6 +7210,9 @@ window.CloudPlayer = function(elid, options){
 						}
 						self.play();
 					} else {
+						if (self.time == 0) {
+							_showloading();
+						}
 						console.warn("[PLAYER] Wait stream " + mTimeWaitStartStream);
 					}
 				} else {
@@ -7603,6 +7655,7 @@ window.CloudPlayer = function(elid, options){
 		var el_controls_ptz_switcher	= self.player.getElementsByClassName('cloudplayer-show-ptz')[0];
 		var el_controls_get_clip	= self.player.getElementsByClassName('cloudplayer-get-clip')[0];
 		var el_controls_get_shot	= self.player.getElementsByClassName('cloudplayer-get-shot')[0];
+		var el_controls_microphone	= self.player.getElementsByClassName('cloudplayer-microphone')[0];
 		
 		if (self.mSrc._origJson().access.indexOf('all') < 0 ) {
                     el_controls_ptz_switcher.style.display = 'none';
@@ -7628,7 +7681,7 @@ window.CloudPlayer = function(elid, options){
 			console.log(r);
 			var actions = r.actions;
 			self.PTZActions = actions;
-			if (actions!== undefined){ 
+			if ((actions !== undefined) && (actions != null) && (actions.length > 0)){ 
 			    el_controls_ptz_switcher.style.display = 'block';
 			    el_controls_ptz_top.style.display = actions.indexOf("top") > -1 ? 'block' : 'none';
 			    el_controls_ptz_bottom.style.display = actions.indexOf("bottom") > -1 ? 'block' : 'none';
@@ -7643,6 +7696,21 @@ window.CloudPlayer = function(elid, options){
 			console.log(r);
 			el_controls_ptz_switcher.style.display = 'none';
 		    });
+		    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) { //check the ability capture audio
+			mConn._getAPI().cameraAudio(self.mSrc.getID()).done( function(answer){
+				console.log(answer);
+				if (answer.caps !== undefined && answer.caps.backward_formats !== undefined && answer.caps.backward_formats.length > 0) {
+					el_controls_microphone.classList.remove('disabled');
+				} else {
+					el_controls_microphone.classList.add('disabled');
+				}
+			}).fail(function(err){
+				console.log('Backward channel request:' + err);
+				el_controls_microphone.classList.add('disabled');
+			});
+		    } else {
+			el_controls_microphone.classList.add('disabled');
+		    }
 		}
 		/*binary*/		
 	}
@@ -7917,13 +7985,12 @@ window.CloudPlayer = function(elid, options){
 	self._hideSnapshot = function (isHidden) {
 	    if (self.player) {
 		var element = self.player.getElementsByClassName('cloudplayer-snapshot')[0];
-		if( isHidden) {
-		    $(element).addClass("hidden");
-		} else {
-		    $(element).removeClass("hidden");
-		}
 		var videotag = null;
-		
+		if( isHidden) {
+			$(element).addClass("hidden");
+		} else {
+			$(element).removeClass("hidden");
+		}
 		
 		var vtags = self.player.getElementsByTagName('video');
 		for (var i =0; i < vtags.length; i++) {
@@ -7972,7 +8039,52 @@ window.CloudPlayer = function(elid, options){
 		}
 	    }
 	}
-
+	
+	var backwardPlayer = null;
+	self._sendBackwardAudio = function(isStarted) {
+		var element		= self.player.getElementsByClassName('cloudplayer-microphone')[0];
+		var pseudoplayer	= self.player.getElementsByClassName('cloudplayer-backward-webrtc')[0];
+		if (self.isBackwardAudioStarted == true) {
+			console.log('TODO: Stop bw_audio');
+			element.classList.remove("prepare");
+			element.classList.remove("onair");
+			self.isBackwardAudioStarted = false;
+			if (backwardPlayer != null) {
+				backwardPlayer.stopWS();
+				backwardPlayer = null;
+			}
+		} else {
+			console.log('TODO: Start bw_audio');
+			mConn._getAPI().cameraBackwardUrls(self.mSrc.getID()).done(function(live_urls){
+				console.log(live_urls);
+				if (live_urls.webrtc_backward !== undefined) {
+					//element.classList.add("onair");
+					element.classList.add("prepare");
+					self.isBackwardAudioStarted = true;
+				
+					backwardPlayer = new CloudPlayerWebRTC2(
+						pseudoplayer, 
+						live_urls.webrtc_backward.connection_url, 
+						live_urls.webrtc_backward.ice_servers, {send_video: false, send_audio: true}
+					);
+					backwardPlayer.onServerError = function(event){
+						element.classList.remove("onair");
+						self.isBackwardAudioStarted = false;
+						console.error("[WebRTC] Event error ", event);
+						backwardPlayer.stopWS();
+					}
+					backwardPlayer.onStartStreaming = function() {
+						console.log('afterIce');
+						element.classList.remove("prepare");
+						element.classList.add("onair");
+					}
+					backwardPlayer.startWS();
+				}
+			}).fail(function(r){
+				console.log(r);
+			});
+		}
+	}
 	
 	self.setPosition = function(t){
 		mPosition = t;
@@ -7988,6 +8100,7 @@ window.CloudPlayer = function(elid, options){
 		self.setPosition(mPosition);
 	}
 
+	var pause_time = 0;
 	self.getPosition = function(){
 		if (mPlaying) {
 			if (mPosition == -1) {
@@ -8005,8 +8118,8 @@ window.CloudPlayer = function(elid, options){
 				return mPosition;
 			}
 			return Math.floor(self.time);
-		} else {
-			// TODO
+		} else if (mPausing ){
+			return pause_time;
 		}
 		return 0;
 	}
@@ -8063,6 +8176,7 @@ window.CloudPlayer = function(elid, options){
 	    mStopped = false;
 
 	    if (mPausing == false) {
+		pause_time = self.getPosition();
 		mPausing = true;
 		mPlaying = false;
 		el_pause.classList.add('play');
@@ -10417,6 +10531,7 @@ window.CloudPlayerWebRTC2 = function(objVideoEl, strConnectionUrl, arrIceServers
                         sdp = {'to': strSessionPartnerPeerUID, 'sdp': objSessionPartnerPeer.localDescription}
                         m_objWS.send(JSON.stringify(sdp));
                         console.warn("[WEBRTC2] Streaming (2)");
+                        self.onStartStreaming();
                         _checkAutoPlay(m_objVideoEl.play());
                     });
                 }
@@ -10536,6 +10651,10 @@ window.CloudPlayerWebRTC2 = function(objVideoEl, strConnectionUrl, arrIceServers
 	self.onServerError = function(event) {
 		console.error("[WEBRTC2] Unable to connect to server, did you add an exception for the certificate?", event)
 	}
+	
+	self.onStartStreaming = function() {
+		//stub for event
+	}
 
 	self.onRemoteStreamAdded = function(event) {
 		videoTracks = event.stream.getVideoTracks();
@@ -10580,7 +10699,7 @@ window.CloudPlayerWebRTC2 = function(objVideoEl, strConnectionUrl, arrIceServers
 	}
 };
 
-window.CloudPlayerWebRTC2.version = "2.0.1";
+window.CloudPlayerWebRTC2.version = "2.0.3";
 window.CloudCameraTimelineMode = {};
 
 CloudCameraTimelineMode.MINUTES_MODE = {
@@ -12526,8 +12645,8 @@ window.CloudSessionTimeline = function(viewid){
 window.CloudSDK = window.CloudSDK || {};
 
 // Automaticlly generated
-CloudSDK.version = '3.1.6';
-CloudSDK.datebuild = '210210';
+CloudSDK.version = '3.1.7';
+CloudSDK.datebuild = '210302';
 console.log('CloudSDK.version='+CloudSDK.version + '_' + CloudSDK.datebuild);
 
 // Wrapper for VXGCloudPlayer & CloudSDK
