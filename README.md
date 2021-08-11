@@ -1,5 +1,7 @@
 # VXG.WebPlayer.SDK
 
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/VideoExpertsGroup/VXG.WebPlayer.SDK.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/VideoExpertsGroup/VXG.WebPlayer.SDK/alerts/) [![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/VideoExpertsGroup/VXG.WebPlayer.SDK.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/VideoExpertsGroup/VXG.WebPlayer.SDK/context:javascript)
+
 ## Quick Start
 
 Add the following code to the `< head >` section of your web page.
