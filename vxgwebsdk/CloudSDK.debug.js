@@ -1,6 +1,6 @@
 // CloudSDK.debug.js
-// version: 3.1.7
-// date-of-build: 210302
+// version: 3.1.9
+// date-of-build: 211206
 // copyright (c) VXG Inc
 // Includes gl-matrix  <https://github.com/toji/gl-matrix>
 // ver: 3.3.0 // Available under MIT License 
@@ -33,7 +33,8 @@ window.Log = function(elid){
 		}
 		var escaped = msg;
 		var findReplace = [[/&/g, "&amp;"], [/</g, "&lt;"], [/>/g, "&gt;"], [/"/g, "&quot;"]]
-		for(var item in findReplace)
+		//for(var item in findReplace)
+		for(var item = 0; item < findReplace.length; item++)
 			escaped = escaped.replace(findReplace[item][0], findReplace[item][1]);
 		return escaped;
 	}
@@ -62,6 +63,8 @@ window.Log = function(elid){
 
 window.CloudHelpers = window.CloudHelpers || {};
 
+CloudHelpers.POSITION_LIVE = -1;
+
 
 window.CloudHelpers.RequestWrap = function(){
     var self = this;
@@ -76,13 +79,13 @@ window.CloudHelpers.RequestWrap = function(){
 	if(obj.contentType){
 		xhr.setRequestHeader('Content-Type', obj.contentType);
 	}
-	if(obj.token){
-		xhr.setRequestHeader('Authorization', "SkyVR " + obj.token);
-	} else if (obj.access_token) {
+	if (obj.access_token) {
 		xhr.setRequestHeader('Authorization', "Acc " + obj.access_token);
-	}
-	
-	
+	} 
+// [TECH-2963] In some cases this header can produce CORS-block , removing to prevent
+//	else if(obj.token){ 
+//		xhr.setRequestHeader('Authorization', "SkyVR " + obj.token);
+//	} 
 	xhr.onload = function() {
 		var r = "";
 		if(this.responseText != ""){
@@ -245,7 +248,8 @@ CloudHelpers.waitPromises = function(arr_promise){
 			p.resolve(result);
 		}
 	};
-	for(var i in arr_promise){
+	//for(var i in arr_promise){
+	for (var i = 0; i < max_len; i++){
 		arr_promise[i].done(cmpl).fail(cmpl);
 	}
 	return p;
@@ -262,9 +266,9 @@ CloudHelpers.request = function(obj){
 	if(obj.contentType){
 		xhr.setRequestHeader('Content-Type', obj.contentType);
 	}
-	if(obj.token){
-		xhr.setRequestHeader('Authorization', "SkyVR " + obj.token);
-	}
+//	if(obj.token){
+//		xhr.setRequestHeader('Authorization', "SkyVR " + obj.token);
+//	}
 	xhr.onload = function() {
 		var r = "";
 		if(this.responseText != ""){
@@ -309,9 +313,9 @@ CloudHelpers.request2 = function(obj){
 	if(obj.contentType){
 		xhr.setRequestHeader('Content-Type', obj.contentType);
 	}
-	if(obj.token){
-		xhr.setRequestHeader('Authorization', "SkyVR " + obj.token);
-	}
+//	if(obj.token){
+//		xhr.setRequestHeader('Authorization', "SkyVR " + obj.token);
+//	}
 	if(obj.access_token){
 		xhr.setRequestHeader('Authorization', "Acc " + obj.access_token);
 	}
@@ -559,7 +563,9 @@ CloudHelpers.keepParams = ["lang", "url", "fcno", "vendor", "demo",
 CloudHelpers.changeLocationState = function(newPageParams){
 	var url = '';
 	var params = [];
-	for(var i in CloudHelpers.keepParams){
+
+	//for(var i in CloudHelpers.keepParams){
+	for(var i = 0 ; i < CloudHelpers.keepParams.length; i++){
 		var name = CloudHelpers.keepParams[i];
 		if(CloudHelpers.containsPageParam(name))
 			params.push(name + '=' + encodeURIComponent(CloudHelpers.pageParams[name]))
@@ -577,7 +583,7 @@ CloudHelpers.changeLocationState = function(newPageParams){
 	}catch(e){
 		console.error("changeLocationState: Could not change location to " + new_url);
 	}
-	CloudHelpers.pagePwindow.btoa('Hello, world');arams = CloudHelpers.parsePageParams();
+//	CloudHelpers.pagePwindow.btoa('Hello, world'); params = CloudHelpers.parsePageParams();
 }
 
 CloudHelpers.osname = function(){
@@ -650,6 +656,19 @@ CloudHelpers.formatUTCTime = function(t){
 		+ ("00" + d.getUTCSeconds()).slice(-2);
 	return str;
 };
+
+CloudHelpers.readableFormatUTCTime = function(t){
+	var d = new Date();
+	d.setTime(t);
+	var str = d.getUTCFullYear() + "/"
+		+ ("00" + (d.getUTCMonth()+1)).slice(-2) + "/"
+		+ ("00" + d.getUTCDate()).slice(-2) + " "
+		+ ("00" + d.getUTCHours()).slice(-2) + ":"
+		+ ("00" + d.getUTCMinutes()).slice(-2) + ":"
+		+ ("00" + d.getUTCSeconds()).slice(-2);
+	return str;
+};
+
 
 CloudHelpers.ONE_SECOND = 1000;
 CloudHelpers.ONE_MINUTE = 60*1000;
@@ -725,7 +744,8 @@ CloudHelpers.isLocalUrlOrIP = function(url){
 		var cur_a = CloudHelpers.convertIpV4ToInt(a.host);
 		var local_addresses = [];
 		local_addresses.push({'from': '127.0.0.0', 'to': '127.255.255.255', 'comment': 'localhost addresses'});
-		for(var i in local_addresses){
+		//for(var i in local_addresses){
+		for(var i = 0; i < local_addresses.length; i++) {
 			var range_from = CloudHelpers.convertIpV4ToInt(local_addresses[i].from);
 			var range_to = CloudHelpers.convertIpV4ToInt(local_addresses[i].to);
 			var comment = local_addresses[i].comment;
@@ -734,6 +754,7 @@ CloudHelpers.isLocalUrlOrIP = function(url){
 				return true;
 			}
 		}
+
 	}
 	return false;
 }
@@ -754,7 +775,8 @@ CloudHelpers.isPublicUrl = function(url){
 		local_addresses.push({'from': '192.168.0.0', 'to': '192.168.255.255', 'comment': '256 contiguous class C network'});
 		local_addresses.push({'from': '169.254.0.0', 'to': '169.254.255.255', 'comment': 'Link-local address also refered to as Automatic Private IP Addressing'});
 		local_addresses.push({'from': '127.0.0.0', 'to': '127.255.255.255', 'comment': 'localhost addresses'});		
-		for(var i in local_addresses){
+		//for(var i in local_addresses){
+		for(var i = 0; i < local_addresses.length; i++) {
 			var range_from = CloudHelpers.convertIpV4ToInt(local_addresses[i].from);
 			var range_to = CloudHelpers.convertIpV4ToInt(local_addresses[i].to);
 			var comment = local_addresses[i].comment;
@@ -772,6 +794,14 @@ CloudHelpers.isFrame = function(){
 	} catch (e) {
 		return true;
 	}
+}
+
+CloudHelpers.isIE = function() {
+    var ua = navigator.userAgent.toLowerCase();
+    if (ua.indexOf('msie') !== -1 || ua.indexOf('trident') > -1) {
+        return true;
+    }
+    return false;
 }
 
 CloudHelpers.isFireFox = function(){
@@ -885,8 +915,8 @@ CloudHelpers.checkAutoplay = function(ch_auto_callback){
 		console.log("checkAutoplay: waiting, ", _result)
 		if (_result == null) {
 			CloudHelpers.autoPlayAllowed = true;
-			d.resolve(); // it's ok autoplay for Chrome
-			tmp_video_el.remove();
+ 			d.resolve(); // it's ok autoplay for Chrome
+			tmp_video_el.parentNode.removeChild(tmp_video_el);
 		}
 	}, false);
 	
@@ -896,7 +926,7 @@ CloudHelpers.checkAutoplay = function(ch_auto_callback){
 		s = window['Promise'].toString();
 	}
 
-	if (s.indexOf('function Promise()') !== -1
+	if (p && s.indexOf('function Promise()') !== -1
 		|| s.indexOf('function ZoneAwarePromise()') !== -1) {
 
 		p.catch(function(error) {
@@ -915,10 +945,13 @@ CloudHelpers.checkAutoplay = function(ch_auto_callback){
 					throw error; // happened something else
 				}
 			}
-			tmp_video_el.remove();
+			//tmp_video_el.remove();
+			if (tmp_video_el.parentNode) {
+				tmp_video_el.parentNode.removeChild(tmp_video_el);
+			}
 		})
 	} else {
-		console.error("checkAutoplay could not work in your browser");
+		console.warn("checkAutoplay could not work in your browser");
 		d.reject();
 		ch_auto_callback(CloudHelpers.autoPlayAllowed);
 	}
@@ -1114,11 +1147,13 @@ window.CloudAPI = function(cloud_token, svcp_url){
 		storage: self.host+"api/v2/storage/",
 		clips: self.host+"api/v2/storage/clips/",
 		channels: self.host+"api/v3/channels/"
+		
 	};
 
 	self.endpoints_v4 = {
 		api: self.host + "api/v4/",
 		live_watch: self.host + "api/v4/live/watch/",
+		images: self.host+"api/v4/storage/images/"
 	};
 
 	self._getCloudToken = function(){
@@ -1361,8 +1396,13 @@ window.CloudAPI = function(cloud_token, svcp_url){
 	};
 
 	self.cameraUpdatePreview = function(camid){
+		var get_params = {};
+		if(self.isShareToken()){
+			get_params.token = self._getCloudToken();	
+		}
+		var query = CloudHelpers.mapToUrlQuery(get_params);
 		return self.requestWrap.request({
-			url: self.endpoints.cameras + camid + "/preview/update/",
+			url: self.endpoints.cameras + camid + "/preview/update/?" + query,
 			type: 'POST',
 			token: self._getCloudToken()
 		});
@@ -1703,7 +1743,42 @@ window.CloudAPI = function(cloud_token, svcp_url){
 		token: self._getCloudToken()
 	    });
 	};
-
+	
+	//images
+	self.cameraImages = function( options ){
+		var data = {};
+		if(self.isShareToken()){
+			data.token = self._getCloudToken();
+		}
+		if (options.start !== undefined){
+			data.start = options.start;
+		}
+		if (options.end !== undefined) {
+			data.end = options.end;
+		}
+		if (options.order_by !== undefined) {
+			data.order_by = options.order_by;
+		}
+		if (options.origin !== undefined) {
+			data.origin = options.origin;
+		}
+		if (options.limit !== undefined) {
+			data.limit = options.limit;
+		}
+		if (options.offset !== undefined) {
+			data.offset = options.offset;
+		}
+		var r_url = self.endpoints_v4.images + '?';
+		
+		var query = CloudHelpers.mapToUrlQuery(data);
+		
+		return self.requestWrap.request({
+			url: r_url + query,
+			type: 'GET',
+			token: self._getCloudToken(),
+			data: JSON.stringify(data),
+		});
+	}
 };
 
 window.SkyVR = window.CloudAPI;
@@ -1865,7 +1940,8 @@ CloudAPI.cache.cameraVideoStreamName = function(cameraID){
 	};
 	var video = CloudAPI.cache.cameras[cameraID].video;
 	if(video.streams){
-		for(var v in video.streams){
+		//for(var v in video.streams){
+		for(var i = 0 ; i < video.streams.length; i++){
 			return v;
 		}
 	}
@@ -1986,7 +2062,7 @@ CloudAPI.setURL = function(url){
 			expireTimeUTC: 0
 		};
 		// console.log(localStorage);
-		if(localStorage.getItem('SkyVR_anonToken'))
+		if( localStorage !== undefined && localStorage.getItem('SkyVR_anonToken'))
 			CloudAPI.config.anonToken = JSON.parse(localStorage.getItem('SkyVR_anonToken'));
 		CloudAPI.config.apiToken = {
 			token: '',
@@ -2025,7 +2101,7 @@ CloudAPI.applyApiToken = function(){
 		cache: false,
 		beforeSend: function(xhr,settings) {
 			if(CloudAPI.config.apiToken && CloudAPI.config.apiToken.token) {
-				xhr.setRequestHeader('Authorization', 'SkyVR ' + CloudAPI.config.apiToken.token);
+//				xhr.setRequestHeader('Authorization', 'SkyVR ' + CloudAPI.config.apiToken.token);
 			}
 		}
 	});
@@ -2264,7 +2340,8 @@ CloudAPI.hasAccess = function(caminfo, rule){
 	if(!caminfo) return false;
 	if(!caminfo['access']) return true;
 	var bResult = false;
-	for(var s in caminfo['access']){
+//	for(var s in caminfo['access']){
+	for(var s = 0; s < caminfo['access'].length; s++){ 
 		if(caminfo['access'][s] == rule)
 			bResult = true;
 	}
@@ -2708,7 +2785,7 @@ CloudAPI.anonToken = function(){
 			crossDomain: true,
 			cache: false,
 			headers:{
-				'Authorization': 'SkyVR ' + CloudAPI.config.anonToken.token
+//				'Authorization': 'SkyVR ' + CloudAPI.config.anonToken.token
 			}
 		});
 		d.resolve(CloudAPI.config.anonToken);
@@ -2726,7 +2803,7 @@ CloudAPI.anonToken = function(){
 				crossDomain: true,
 				cache: false,
 				headers:{
-					'Authorization': 'SkyVR ' + tk.token
+//					'Authorization': 'SkyVR ' + tk.token
 				}
 			});
 			d.resolve(CloudAPI.config.anonToken);
@@ -3659,7 +3736,7 @@ CloudAPI.storageClipListAnon = function(token){
 				cache : false,
 				type: 'GET',
 				headers: {
-					'Authorization':'SkyVR ' + tk.token
+//					'Authorization':'SkyVR ' + tk.token
 				}
 			}).done(function(data){
 				req_d.resolve(data);
@@ -3743,7 +3820,7 @@ CloudAPI.storageClipAnon = function(clipid, token){
 			data: params,
 			cache : false,
 			headers: {
-				'Authorization':'SkyVR ' + tk.token
+//				'Authorization':'SkyVR ' + tk.token
 			}
 		}).done(function(data){
 			d.resolve(data);
@@ -3984,7 +4061,9 @@ CloudAPI.loadApiTokenFromHref = function(){
 	var token = prms[prms.length - 1];
 	token = token.split("&");
 	
-	for(var i in token){
+	
+	//for(var i in token){
+	for(var i = 0; i < token.length; i++){
 		var name = token[i].split("=")[0];
 		var param = decodeURIComponent(token[i].split("=")[1]);
 		if(name == "token"){
@@ -5022,7 +5101,8 @@ window.CloudCamera = function(conn, jsonData){
 			res.end = end;
 			res.periods = []
 			var list = r.objects[0][slice];
-			for(var i in list){
+			//for(var i in list){
+			for(var i = 0; i < list.length; i++) {
 				var period = {}
 				period.start = CloudHelpers.parseUTCTime(list[i][0]);
 				period.end = period.start + list[i][1]*1000;
@@ -5044,7 +5124,8 @@ window.CloudCamera = function(conn, jsonData){
 		}
 		mConn._getAPI().storageActivity(mID,use_timezone).done(function(r){
 			var res = [];
-			for(var i in r.objects){
+			//for(var i in r.objects){
+			for(var i = 0; i < r.objects.length; i++) {
 				res.push(CloudHelpers.parseUTCTime(r.objects[i] + 'T00:00:00'));
 			}
 			p.resolve(res);
@@ -5105,7 +5186,8 @@ window.CloudCamera = function(conn, jsonData){
 		}
 		mConn._getAPI().getCameraSharingTokensList(mID).done(function(r){
 			var bFound = false;
-			for(var i in r.objects){
+			//for(var i in r.objects){
+			for(var i = 0; i < r.objects.length; i++){
 				var sh_tkn = r.objects[i];
 				if(sh_tkn.name == sharing_token_name){
 					bFound = true;
@@ -5144,7 +5226,8 @@ window.CloudCamera = function(conn, jsonData){
 		}
 		mConn._getAPI().getCameraSharingTokensList(mID).done(function(r){
 			var bFound = false
-			for(var i in r.objects){
+			//for(var i in r.objects){
+			for(var i = 0; i < r.objects.length; i++){
 				var sh_tkn = r.objects[i];
 				if(sh_tkn.name == sharing_token_name){
 					bFound = true;
@@ -5258,7 +5341,8 @@ window.CloudCamera = function(conn, jsonData){
 		}
 		mConn._getAPI().getCameraSharingTokensList(mID).done(function(r){
 			var bFound = false;
-			for(var i in r.objects){
+			//for(var i in r.objects){
+			for(var i = 0; i < r.objects.length; i++){
 				var sh_tkn = r.objects[i];
 				if(sh_tkn.name == sharing_token_name_for_stream){
 					bFound = true;
@@ -5505,7 +5589,8 @@ window.CloudCameraList = function(conn){
 		u.login = u.login || "";
 		mConn._getAPI().camerasList(camFilter._values()).done(function(r){
 			var bFound = false;
-			for(var i in r.objects){
+			//for(var i in r.objects){
+			for(var i=0; i < r.objects.length; i++){
 				var cam = r.objects[i];
 				cam['login'] = cam['login'] || "";
 				if(cam['login'] == u.login){
@@ -5545,7 +5630,8 @@ window.CloudCameraList = function(conn){
 		
 		mConn._getAPI().camerasList(camFilter._values()).done(function(r){
 			var arr = [];
-			for(var i in r.objects){
+			//for(var i in r.objects){
+			for(var i = 0; i < r.objects.length; i++){
 				arr.push(new CloudCamera(mConn, r.objects[i]));
 			}
 			p.resolve(arr);
@@ -5925,7 +6011,8 @@ window.CloudSessionList = function(conn){
 		filterMap['detail'] = 'detail';
 		mConn._getAPI().getCamsessList(filterMap).done(function(r){
 			var arr = [];
-			for(var i in r.objects){
+			//for(var i in r.objects){
+			for(var i=0; i < r.objects.length; i++){
 				arr.push(new CloudSession(mConn, r.objects[i]));
 			}
 			p.resolve(arr);
@@ -6000,6 +6087,12 @@ CloudPlayerEvent.PAUSED = {
 	name: 'PAUSED',
 	code: 3,
 	text: 'Player state is PAUSE.'
+};
+
+CloudPlayerEvent.STOPED = {
+	name: 'STOPED',
+	code: 4,
+	text: 'Player state is STOP.'
 };
 
 CloudPlayerEvent.CLOSED = {
@@ -6111,9 +6204,16 @@ window.CloudPlayer = function(elid, options){
 	var mAccessToken = null;
 	var mAccessTokenExpire = null;
 	var mAccessTokenTimeInterval = null;
-	var mPTZActions = null;
 	var isBackwardAudioStarted = false;
-	
+	var mBackwardAudioFormats = undefined;
+	var mRecordMode = "records";
+	var f_callbackIOsFullscreenFunc = null;
+
+	self.mPTZActions = null;
+	self.mPTZShow = true;
+
+	self.isMobile = CloudHelpers.isMobile();
+
 	self.timePolingLiveUrls = 15000;
 	self.player = document.getElementById(elid);
 	
@@ -6129,7 +6229,7 @@ window.CloudPlayer = function(elid, options){
 	var mVideoSizeLive = {w: 0, h: 0};
 
 	// configure hls plugin
-	if (CloudHelpers.isChrome() && !CloudHelpers.isMobile()) {
+	if (CloudHelpers.isChrome() && !self.isMobile) {
 		videojs.options.hls = videojs.options.hls || {};
 		videojs.options.html5.nativeAudioTracks = true;
 		videojs.options.html5.nativeVideoTracks = false;//true;
@@ -6158,7 +6258,6 @@ window.CloudPlayer = function(elid, options){
 		return null;
 	}
 	
-
 	
 	var mPosition = -1;
 	
@@ -6189,7 +6288,7 @@ window.CloudPlayer = function(elid, options){
 
 	self.m.backwardAudio = false;
 	self.m.backwardAudio = options.backwardAudio || self.player.getAttribute('backward-audio') != null || self.m.backwardAudio; 
-	self.defualtAutohide = CloudHelpers.isMobile() ? 0 : 3000;
+	self.defualtAutohide = 3000;
 	if (options["autohide"] !== undefined) {
 		self.m.autohide = options.autohide	
 	} else {
@@ -6212,14 +6311,17 @@ window.CloudPlayer = function(elid, options){
 	} else {
 		try{
 			tmp_plr_frmt = localStorage.getItem("preferred_player_format");
+			if (tmp_plr_frmt === 'jpeg'){
+				tmp_plr_frmt = '';
+			}
 		} catch (e) {
 			console.error("[CloudPlayer] error load format: ", e)
 		}
 	}
 
-	if (tmp_plr_frmt == 'webrtc' || tmp_plr_frmt == 'html5' || tmp_plr_frmt == 'flash') {
+	if (tmp_plr_frmt == 'webrtc' || tmp_plr_frmt == 'html5' || tmp_plr_frmt == 'flash' || tmp_plr_frmt == 'jpeg') {
 		self.mPlayerFormat = tmp_plr_frmt;
-	}else{
+	} else{
 		if(tmp_plr_frmt != null){
 		} 
 		console.warn("[CloudPlayer] Unknown player format: ", tmp_plr_frmt, ", html5 is used by default");
@@ -6227,12 +6329,15 @@ window.CloudPlayer = function(elid, options){
 
 	if (options.useOnlyPlayerFormat) {
 		var use_plr_frmt = options.useOnlyPlayerFormat;
-		if (use_plr_frmt !== 'webrtc' && use_plr_frmt !== 'html5' && use_plr_frmt !== 'flash') {
+		
+		if (use_plr_frmt !== 'webrtc' && use_plr_frmt !== 'html5' && use_plr_frmt !== 'flash' && use_plr_fmt !== 'jpeg') {
 			console.error("Wrong value of useOnlyPlayerFormat, expected 'webrtc' or 'html5' or 'flash'")
 		} else {
 			self.mPlayerFormat = use_plr_frmt;
 			mPlayerFormatForced = use_plr_frmt;
-			try { localStorage.setItem("preferred_player_format", use_plr_frmt); } catch(e) {}
+			if (use_plr_frmt !== 'jpeg') {
+				try { localStorage.setItem("preferred_player_format", use_plr_frmt); } catch(e) {}
+			}
 		}
 	}
 
@@ -6279,14 +6384,21 @@ window.CloudPlayer = function(elid, options){
 		+ '</div>'
 		+ '</div>'
 		+ '<div class="cloudplayer-controls-zoom-container">'
-		+ '<div class="cloudplayer-controls-zoom-position">'
+		+ '	<div class="cloudplayer-controls-zoom-position">'
 		+ '		<div class="cloudplayer-zoom-position-cursor"></div>'
+		+ '	</div>'
+		+ '	<div class="cloudplayer-controls-zoom' + ((self.isMobile)?' mobile ':'') + '">'
+		+ '		<div class="cloudplayer-zoom-up"></div>'
+		+ '		<div class="cloudplayer-zoom-progress zoom10x"></div>'
+		+ '		<div class="cloudplayer-zoom-down"></div>'
+		+ '	</div>'
 		+ '</div>'
-		+ '<div class="cloudplayer-controls-zoom">'
-		+ '	<div class="cloudplayer-zoom-up"></div>'
-		+ '	<div class="cloudplayer-zoom-progress zoom10x"></div>'
-		+ '	<div class="cloudplayer-zoom-down"></div>'
-		+ '</div>'
+		+ '<div class="cloudplayer-controls-timelapse-container">'
+		+ '	<div class="cloudplayer-timelapse-controls">'
+		+ '		<div class="cloudplayer-timelapse-left" ><span class="cloudplayer-timelapse-icon">&#10094;&#10094;</span></div>'
+		+ '		<div class="cloudplayer-timelapse-pause"><span class="cloudplayer-timelapse-icon">&#10073;&#10073;</span></div>'
+		+ '		<div class="cloudplayer-timelapse-right"><span class="cloudplayer-timelapse-icon">&#10095;&#10095;</span></div>'
+		+ '	</div>'
 		+ '</div>'
 		+ '<div class="cloudplayer-watermark">'
 		+ '</div>'
@@ -6296,14 +6408,16 @@ window.CloudPlayer = function(elid, options){
                 + '    <tr><td><input class="clipbefore" type="number" min=1 max=3600 value="10"></td><td class="clipdt"></td><td><input class="clipafter" type="number" min=1 max=3600 value="10"></td></tr>'
                 + '    <tr><td colspan="3"><div class="clipcreatebtn">Create clip &gt;</div></td></tr></table>'
                 + '</div>'
-		+ '<div class="cloudplayer-info">'
+		+ '<div class="cloudplayer-info' + ((self.isMobile)?' mobile ':'') + '">'
 		+ '<div class="cloudplayer-info-main">'
 		+ '		<div class="cloudplayer-info-title">Settings</div>'
 		+ '		<div class="cloudplayer-info-container">'
 		+ '		<div class="cloudplayer-info-player-mode" style="' + (mPlayerFormatForced !== null ? 'disabled' : '' ) + '"> Preferred format: '
 		+ '		<div class="selected-format"></div></div>'
-		+ '		<div class="cloudplayer-info-player-dewarping enabled"  style="' + (mIsDewarping !== null && False ? 'display: none' : '' ) + '">Dewarping: '
+		+ (CloudHelpers.isIE() ? ('') : (
+		  '		<div class="cloudplayer-info-player-dewarping enabled"  style="' + (mIsDewarping !== null && False ? 'display: none' : '' ) + '">Dewarping: '
 		+ '		<div class="selected-dewarping">Off</div></div>'
+		  ))
 		+ '		<div class="cloudplayer-info-player-speed enabled">Speed: '
 		+ '		<div class="selected-speed">1x</div></div>'
 		+ '		<!-- div class="cloudplayer-info-latency">Player Latency: '
@@ -6325,9 +6439,10 @@ window.CloudPlayer = function(elid, options){
 		+ '<div class="cloudplayer-info-setting mode-select">'
 		+ '		<div class="cloudplayer-info-title"><span class="back"></span>Preferred format</div>'
 		+ '		<div class="cloudplayer-info-container">'
-		+ '		<div class="cloudplayer-player-mode cloudplayer-webrtc-mode" style="display: none">'+(options['alt_protocol_names']?'Low latency':'WebRTC')+'</div>'
-		+ ' 		<div class="cloudplayer-player-mode cloudplayer-flash-mode selected">'+(options['alt_protocol_names']?'Standard':'RTMP')+'</div>'
-		+ ' 		<div class="cloudplayer-player-mode cloudplayer-html5-mode">'+(options['alt_protocol_names']?'Reliable':'HLS')+'</div>'
+		+ '			<div class="cloudplayer-player-mode cloudplayer-webrtc-mode" style="display: none">'+(options['alt_protocol_names']?'Low latency':'WebRTC')+'</div>'
+		+ ' 			<div class="cloudplayer-player-mode cloudplayer-flash-mode selected">'+(options['alt_protocol_names']?'Standard':'RTMP')+'</div>'
+		+ ' 			<div class="cloudplayer-player-mode cloudplayer-html5-mode">'+(options['alt_protocol_names']?'Reliable':'HLS')+'</div>'
+		+ '			<div class="cloudplayer-player-mode cloudplayer-jpeg-mode">'+(options['alt_protocol_names']?'Performance':'JPEG')+'</div>'
 		+ '		</div>'
 		+ '</div>'
 		+ '<div class="cloudplayer-info-setting dewarping-select">'
@@ -6341,12 +6456,12 @@ window.CloudPlayer = function(elid, options){
 		+ '		<div class="cloudplayer-info-title"><span class="back"></span>Speed</div>'
 		+ '		<div class="cloudplayer-info-container">'
 		+ '			<div class="cloudplayer-player-mode cloudplayer-speed-mode" data-speed="0.125">0.125x</div>'
-		+ '			<div class="cloudplayer-player-mode cloudplayer-speed-mode" data-speed="0.25">0.25x</div>'
+		+ '			<div class="cloudplayer-player-mode cloudplayer-speed-mode'+ ((self.isMobile)?' mobile ':'') +'" data-speed="0.25">0.25x</div>'
 		+ '			<div class="cloudplayer-player-mode cloudplayer-speed-mode" data-speed="0.5">0.5x</div>'
 		+ '			<div class="cloudplayer-player-mode cloudplayer-speed-mode selected" data-speed="1">1x</div>'
-		+ '			<div class="cloudplayer-player-mode cloudplayer-speed-mode" data-speed="2">2x</div>'
+		+ '			<div class="cloudplayer-player-mode cloudplayer-speed-mode'+ ((self.isMobile)?' mobile ':'') +'" data-speed="2">2x</div>'
 		+ '			<div class="cloudplayer-player-mode cloudplayer-speed-mode" data-speed="4">4x</div>'
-		+ '			<div class="cloudplayer-player-mode cloudplayer-speed-mode" data-speed="8">8x</div>'
+		+ '			<div class="cloudplayer-player-mode cloudplayer-speed-mode'+ ((self.isMobile)?' mobile ':'') +'" data-speed="8">8x</div>'
 		+ '			<div class="cloudplayer-player-mode cloudplayer-speed-mode" data-speed="16">16x</div>'
 		+ '		</div>'
 		+ '</div>'
@@ -6374,10 +6489,10 @@ window.CloudPlayer = function(elid, options){
 		+ '	<div class="cloudplayer-pause hidden"></div>'
 		+ '	<div class="cloudplayer-volume-mute"></div>'
 		+ '	<div class="cloudplayer-volume-container">'
-		+ '		<input type="range" min="0" max="100" step="1" data-buffer="0" id="volume" class="cloudplayer-volume" data-rangeSlider>'
+		+ '		<input type="range" min="0" max="100" value="100" step="1" data-buffer="0" id="volume" class="cloudplayer-volume" data-rangeSlider>'
 		+ '		<output></output>'
 		+ '	</div>'
-		+ '	<div class="cloudplayer-time"></div>'
+		+ '	<div class="cloudplayer-time' + ((self.isMobile)?' mobile ':'') + ((options.hideTime)?' hidden' : '') + '"></div>'
 		+ '	<div class="cloudplayer-volume-down"></div>'
 		+ '	<div class="cloudplayer-volume-progress vol7"></div>'
 		+ '	<div class="cloudplayer-volume-up"></div>'
@@ -6385,6 +6500,7 @@ window.CloudPlayer = function(elid, options){
 		+ '	<div class="cloudplayer-microphone disabled"></div>'
 		+ '	<div class="cloudplayer-get-clip" style="display: none"></div>'
 		+ '	<div class="cloudplayer-get-shot" style="display: none"></div>'
+		+ '	<div class="cloudplayer-record-mode mode-records" style="display: none"></div>'
 		+ '	<div class="cloudplayer-single-element-divider"></div>'
 		+ '	<div class="cloudplayer-settings"></div>'
 		+ '	<div class="cloudplayer-show-zoom"></div>'
@@ -6392,7 +6508,7 @@ window.CloudPlayer = function(elid, options){
 		+ '	<div class="cloudplayer-fullscreen"></div>'
 		+ '</div>'
 		+ '</div>'
-		+ '<div class="cloudcameracalendar-content">'
+		+ '<div class="cloudcameracalendar-content'+ ((self.isMobile)?' mobile ':'') +'">'
 		+ '</div>'
 		+ '<div class="cloudplayer-big-play-button" style="display: none"></div>'
 		+ '<canvas class="cloudplayer-stub-snapshot" style="width:100%; height:100%; display:none;"></canvas>'
@@ -6403,22 +6519,26 @@ window.CloudPlayer = function(elid, options){
 		+ '		controls width="100%" height="100%"' 
 //		+ '		data-setup=\'{"aspectRatio":"16:9", "fluid": true}\''
 		+ '		 muted=' + self.m.mute + ' autoplay=true preload playsinline="true"></video>'
-/*		+ '<video crossorigin="anonymous" id="' + elid + '_vjs2" class="video-js" preload="auto" class="video-js vjs-default-skin vjs-live"'
-		+ ' muted=' + self.m.mute + ' autoplay=true preload playsinline="true" ></video>'
+/*		+ '	<video crossorigin="anonymous" id="' + elid + '_vjs2" class="video-js" preload="auto" class="video-js vjs-default-skin vjs-live"'
+		+ '		 muted=' + self.m.mute + ' autoplay=true preload playsinline="true" ></video>'
 */	
-		+ '<video crossorigin="anonymous" id="' + elid + '_nv1" class="cloudplayer-native-video ' + elid + '_nv1"'
-		+ ' autoplay=true preload  playsinline="true" ></video>'
-		+ '<video crossorigin="anonymous" id="' + elid + '_nv2" class="cloudplayer-native-video ' + elid + '_nv2"'
-		+ ' autoplay=true preload  playsinline="true" ></video>'
-		+ '<video crossorigin="anonymous" id="' + elid + '_native_hls" class="cloudplayer-native-hls"'
-		+ ' muted=' + self.m.mute + ' autoplay=true preload  playsinline="true" ></video>'
-		+ '<video crossorigin="anonymous" id="' + elid + '_webrtc" class="cloudplayer-webrtc"'
-		+ ' muted=' + self.m.mute + ' preload  playsinline="true" ></video>'
+		+ '	<video crossorigin="anonymous" id="' + elid + '_nv1" class="cloudplayer-native-video ' + elid + '_nv1"'
+		+ '		autoplay=true preload  playsinline="true" ></video>'
+		+ '	<video crossorigin="anonymous" id="' + elid + '_nv2" class="cloudplayer-native-video ' + elid + '_nv2"'
+		+ ' 		autoplay=true preload  playsinline="true" ></video>'
+		+ '	<video crossorigin="anonymous" id="' + elid + '_native_hls" class="cloudplayer-native-hls"'
+		+ '		muted=' + self.m.mute + ' autoplay=true preload  playsinline="true" ></video>'
+		+ '	<video crossorigin="anonymous" id="' + elid + '_webrtc" class="cloudplayer-webrtc"'
+		+ '		muted=' + self.m.mute + ' preload  playsinline="true" ></video>'
+		+ ' 	<div id="' + elid +'_jpg" class="cloudplayer-jpeg"></div>'
+		+ ' 	<div id="' + elid +'_timelapse" class="cloudplayer-timelapse"></div>'
 		+ '</div>'
 		+ '<div class="cloudplayer-black-screen" style="display: none">'
 		+ '		<div class="cloudplayer-watermark"></div>'
 		+ '		<div class="cloudplayer-sdkversion">SDK ' + CloudSDK.version + '</div>'
 		+ '</div>'
+		+ '<div class="cloudplayer-debug" style="display: none; position : absolute; z-index: 12; width: 100%; height : 50px; background-color: white;">'
+		+ '/<div>'
 	;
 
 	self.vjs = videojs(elid + '_vjs', {
@@ -6438,10 +6558,10 @@ window.CloudPlayer = function(elid, options){
 		if(self.vjs.error() != null){
 			var e = self.vjs.error();
 			if (self.isLive()) {
-				if (e.code == 4 && !CloudHelpers.supportFlash() && !CloudHelpers.isMobile() && self.mPlayerFormat == "flash") {
+				if (e.code == 4 && !CloudHelpers.supportFlash() && !self.isMobile && self.mPlayerFormat == "flash") {
 					//self._showerror({name: "REQUIRE_FLASH", text: "Please install and enable <a target='_black' href='https://get.adobe.com/flashplayer/'>Adobe Flash Player</a> and try again", code: -6001});
 					self._showConsoleError({name: "REQUIRE_FLASH", text: "Please install and enable <a target='_black' href='https://get.adobe.com/flashplayer/'>Adobe Flash Player</a> and try again", code: -6001});
-				} else if(e.code == 3 && CloudHelpers.isMobile()) {
+				} else if(e.code == 3 && self.isMobile) {
 					//self._showerror(CloudReturnCode.ERROR_COULD_NOT_DECODE_STREAM_OR_COULD_NOT_SET_COOKIE_HLS);
 					self._showConsoleError(CloudReturnCode.ERROR_COULD_NOT_DECODE_STREAM_OR_COULD_NOT_SET_COOKIE_HLS);
 				} else {
@@ -6503,6 +6623,15 @@ window.CloudPlayer = function(elid, options){
 	var mNativeHLS_el = self.player.getElementsByClassName('cloudplayer-native-hls')[0];
 	var mNativeVideo1_el = self.player.getElementsByClassName(elid + '_nv1')[0];
 	var mNativeVideo2_el = self.player.getElementsByClassName(elid + '_nv2')[0];
+	var mJpegPlayer_el = self.player.getElementsByClassName('cloudplayer-jpeg')[0];
+	var mTimelapsePlayer_el = self.player.getElementsByClassName('cloudplayer-timelapse')[0];
+	var mTimelapseControlsContainer_el = self.player.getElementsByClassName('cloudplayer-controls-timelapse-container')[0];
+	
+	var el_timelapse_left = self.player.getElementsByClassName('cloudplayer-timelapse-left')[0];
+	var el_timelapse_pause = self.player.getElementsByClassName('cloudplayer-timelapse-pause')[0];
+	var el_timelapse_right = self.player.getElementsByClassName('cloudplayer-timelapse-right')[0];
+	var el_record_mode = self.player.getElementsByClassName('cloudplayer-record-mode')[0];
+
 	//mNativeVideo1_el = document.getElementById(elid + '_nv1');
 	//mNativeVideo2_el = document.getElementById(elid + '_nv2');
 	var mElPlrType = self.player.getElementsByClassName('cloudplayer-info-playertype')[0];
@@ -6518,6 +6647,7 @@ window.CloudPlayer = function(elid, options){
 	var mElSettings_wantWebRTC = self.player.getElementsByClassName('cloudplayer-webrtc-mode')[0];
 	var mElSettings_wantFlash = self.player.getElementsByClassName('cloudplayer-flash-mode')[0];
 	var mElSettings_wantHTML5 = self.player.getElementsByClassName('cloudplayer-html5-mode')[0];
+	var mElSettings_wantJpeg = self.player.getElementsByClassName('cloudplayer-jpeg-mode')[0];
 	var mElementCalendar = self.player.getElementsByClassName('cloudcameracalendar-content')[0];
 	var mElementCalendarButton = self.player.getElementsByClassName('cloudplayer-calendar-container')[0];
 
@@ -6533,6 +6663,13 @@ window.CloudPlayer = function(elid, options){
 
 	var mElSettings_speed_mode = self.player.querySelectorAll('.cloudplayer-speed-mode');
 	var mElSettings_dewarping_mode = self.player.querySelectorAll('.cloudplayer-dewarping-mode');
+
+	var mJpegPlayer = new CloudPlayerJpegLive( mJpegPlayer_el ); 
+	if (self.options.jpegForcedUpdatePeriod) {
+		mJpegPlayer.setForcedUpdatePeriod(self.options.jpegForcedUpdatePeriod);
+	}
+	
+	var mTimelapsePlayer = new CloudPlayerJpegTimelapse (mTimelapsePlayer_el);
 
 	var el_shareclip = self.player.getElementsByClassName('cloudplayer-share-clip')[0];
 	if (el_shareclip !== undefined){
@@ -6594,11 +6731,7 @@ window.CloudPlayer = function(elid, options){
 
 	for(i=0; i<mElSettings_back_buttons.length; i++){
 		mElSettings_back_buttons[i].onclick = function(){
-			
-			el_player.classList.remove('showing-format-selection');
-			el_player.classList.remove('showing-dewarping-selection');
-			el_player.classList.remove('showing-speed-selection');
-			
+			self.collapseMenu();
 		}
 	}
 
@@ -6607,7 +6740,7 @@ window.CloudPlayer = function(elid, options){
 		if (dewarping == 1)
 			self.pano.start();
 		else
-			self.pano.stop();	
+			self.pano.stop();
 	}
 
 	function _applySpeed(speed){
@@ -6629,15 +6762,21 @@ window.CloudPlayer = function(elid, options){
 	var loader_to = null;
 	function _showloading( timeout ){
 		var to = Number(timeout);
-		if (Number.isNaN(to)) {
+		if (CloudHelpers.isIE()){
+			if (isNaN(to)){
+				to = 0;
+			}
+		} else if (Number.isNaN(to)) {
 			to = 0;
 		}
 	
 		if(self.mShowedBigPlayButton == true){
 			_hideloading();
 		} else if(!mShowedLoading){
-			
-			if (to >= 0) {
+			if (to == 0) {
+				el_loader.style.display = "inline-block";
+				mShowedLoading = true;
+			} else if (to > 0) {
 				loader_to = setTimeout( function(){
 					el_loader.style.display = "inline-block";
 					mShowedLoading = true;
@@ -6699,8 +6838,10 @@ window.CloudPlayer = function(elid, options){
 		el_player.classList.toggle('showing-speed-selection');
 	};
 
-	mElSettings_selected_dewarping_container.onclick = function () {
-		el_player.classList.toggle('showing-dewarping-selection');
+	if ((mElSettings_selected_dewarping_container !== undefined) && (mElSettings_selected_dewarping_container !== null)) {
+		mElSettings_selected_dewarping_container.onclick = function () {
+			el_player.classList.toggle('showing-dewarping-selection');
+		}
 	}
 
 	// mElSettingsClose.onclick = function(){
@@ -6712,7 +6853,7 @@ window.CloudPlayer = function(elid, options){
 	    if (api == null) {
 		return;
 	    }
-	    if (!self.PTZActions || !self.PTZActions.includes('left') ) {
+	    if (!self.mPTZActions || (self.mPTZActions.indexOf('left') == -1) ) {
 		return;
 	    }
 
@@ -6732,7 +6873,7 @@ window.CloudPlayer = function(elid, options){
 	    if (api == null) {
 		return;
 	    }
-	    if (!self.PTZActions || !self.PTZActions.includes('right') ) {
+	    if (!self.mPTZActions || (self.mPTZActions.indexOf('right') == -1) ) {
 		return;
 	    }
 
@@ -6752,7 +6893,7 @@ window.CloudPlayer = function(elid, options){
 	    if (api == null) {
 		return;
 	    }
-	    if (!self.PTZActions || !self.PTZActions.includes('top') ) {
+	    if (!self.mPTZActions || (self.mPTZActions.indexOf('top') == -1) ) {
 		return;
 	    }
 
@@ -6772,7 +6913,7 @@ window.CloudPlayer = function(elid, options){
 	    if (api == null) {
 		return;
 	    }
-	    if (!self.PTZActions || !self.PTZActions.includes('bottom') ) {
+	    if (!self.mPTZActions || (self.mPTZActions.indexOf('bottom') == -1) ) {
 		return;
 	    }
 
@@ -6792,7 +6933,7 @@ window.CloudPlayer = function(elid, options){
 	    if (api == null) {
 		return;
 	    }
-	    if (!self.PTZActions || !self.PTZActions.includes('zoom_in') ) {
+	    if (!self.mPTZActions || (self.mPTZActions.indexOf('zoom_in') == -1) ) {
 		return;
 	    }
 
@@ -6812,7 +6953,7 @@ window.CloudPlayer = function(elid, options){
 	    if (api == null) {
 		return;
 	    }
-	    if (!self.PTZActions || !self.PTZActions.includes('zoom_out') ) {
+	    if (!self.mPTZActions || (self.mPTZActions.indexOf('zoom_out') == -1) ) {
 		return;
 	    }
 	    var data = {
@@ -6836,7 +6977,7 @@ window.CloudPlayer = function(elid, options){
 	    if (api == null) {
 		return;
 	    }
-	    if (!self.PTZActions || !self.PTZActions.includes('stop') ) {
+	    if (!self.mPTZActions || (self.mPTZActions.indexOf('stop') == -1) ) {
 		return;
 	    }
 	    var data = {
@@ -6864,7 +7005,9 @@ window.CloudPlayer = function(elid, options){
 	};
 
 	el_controls_ptz_switcher.onclick = function(){
-		el_player.classList.toggle('showing-ptz');
+		if (mPosition == -1) {
+			el_player.classList.toggle('showing-ptz');
+		}
 	};
 
 	el_controls_get_shot.onclick = function(){
@@ -6872,7 +7015,9 @@ window.CloudPlayer = function(elid, options){
 	};
 	
 	el_controls_microphone.onclick = function() {
-		self._sendBackwardAudio();
+		if (mPosition == -1) {
+			self._sendBackwardAudio();
+		}
 	};
 
 	el_clipcreatebtn.onclick = function(){
@@ -6922,9 +7067,51 @@ window.CloudPlayer = function(elid, options){
 
 //		var cld = el_selectcliptime.getElementsByClassName('clipdt')[0];
 //		cld.innerText = _formatTimeCameraRecords(mPosition);
-
-		console.log("<binary> TODO: get clip here");
 	};
+	
+	function showTimelapseControls (isShow) {
+		mTimelapseControlsContainer_el.style.display = (isShow)?"flex":"none";
+	}
+
+	el_record_mode.onclick = function() {
+		if (el_record_mode.classList.contains('mode-records')){
+			el_record_mode.classList.remove('mode-records');
+			el_record_mode.classList.add('mode-timelapse');
+			showTimelapseControls(true);
+			mRecordMode = "timelapse";
+		} else {
+			el_record_mode.classList.add('mode-records');
+			el_record_mode.classList.remove('mode-timelapse');
+			showTimelapseControls(false);
+			mRecordMode = "records";
+		}
+		self.play();
+	}
+	
+	el_timelapse_left.onclick = function(){
+		console.log('TODO: timelapse left');
+		if (mTimelapsePlayer) {
+			mPlaying = true;
+
+			mTimelapsePlayer.rewind(self.time);
+		}
+	}
+	el_timelapse_pause.onclick = function(){
+		console.log('TODO: timelapse pause');
+		if (mTimelapsePlayer) {
+			mStopped = false;
+			mPlaying = false;
+			mTimelapsePlayer.pause();
+		}
+	}
+	el_timelapse_right.onclick = function(){
+		console.log('TODO: timelapse right');
+		if (mTimelapsePlayer) {
+			mPlaying = true;
+		
+			mTimelapsePlayer.fastforward(self.time);
+		}
+	}
 
 	mElSettings_wantWebRTC.onclick = function(){
 		if (options.useOnlyPlayerFormat !== undefined) {
@@ -6950,6 +7137,13 @@ window.CloudPlayer = function(elid, options){
 		self.setPlayerFormat('html5');
 		self.play();
 	}
+	mElSettings_wantJpeg.onclick = function(){
+		if (options.useOnlyPlayerFormat !== undefined) {
+		    return;
+		}
+		self.setPlayerFormat('jpeg');
+		self.play();
+	}
 
 	//mElSettings_circular_fisheye_on.onclick = function(){
 	//	mElSettings_circular_fisheye_on.classList.add('selected');
@@ -6963,31 +7157,35 @@ window.CloudPlayer = function(elid, options){
 	//}
 
 
-	if(CloudHelpers.isMobile()){
+	if(self.isMobile){
 		mElSettings_wantFlash.style.display = 'none';
 	}
 
 	function _updatePlayerFormatUI(live_urls) {
 		live_urls = live_urls || {};
-		mElSettings_wantWebRTC.style.display = (live_urls.rtc || live_urls.webrtc) ? '' : 'none';
+		mElSettings_wantWebRTC.style.display = (!CloudHelpers.isIE() && (live_urls.rtc || live_urls.webrtc)) ? '' : 'none';
 		//hide rtmp as Flash-player cause Flash is going to be hide 
-		mElSettings_wantFlash.style.display = 'none';//(!CloudHelpers.isMobile() && live_urls.rtmp) ? '' : 'none';
+		mElSettings_wantFlash.style.display = 'none';//(!self.isMobile && live_urls.rtmp) ? '' : 'none';
 		mElSettings_wantHTML5.style.display = (live_urls.hls) ? '' : 'none';
-
+		mElSettings_wantJpeg.style.display = (live_urls.hls) ? '' : 'none';
 		// UI
 		mElSettings_wantWebRTC.classList.remove('selected');
 		mElSettings_wantFlash.classList.remove('selected');
 		mElSettings_wantHTML5.classList.remove('selected');
+		mElSettings_wantJpeg.classList.remove('selected');
 
 		if(self.mPlayerFormat == 'webrtc'){
 			mElSettings_wantWebRTC.classList.add('selected');
 			mElSettings_selected_format_container.textContent = mElSettings_wantWebRTC.textContent;
-		}else if(self.mPlayerFormat == 'flash'){
+		} else if(self.mPlayerFormat == 'flash'){
 			mElSettings_wantFlash.classList.add('selected');
 			mElSettings_selected_format_container.textContent = mElSettings_wantFlash.textContent;
-		}else if(self.mPlayerFormat == 'html5'){
+		} else if(self.mPlayerFormat == 'html5'){
 			mElSettings_wantHTML5.classList.add('selected');
 			mElSettings_selected_format_container.textContent = mElSettings_wantHTML5.textContent;
+		} else if(self.mPlayerFormat == 'jpeg'){
+			mElSettings_wantJpeg.classList.add('selected');
+			mElSettings_selected_format_container.textContent = mElSettings_wantJpeg.textContent;
 		}
 	}
 	
@@ -7007,6 +7205,7 @@ window.CloudPlayer = function(elid, options){
 	function showPTZButton(button_element, state){
 		button_element.style.display = state;
 	}
+
 
 	function _hideBlackScreen(){
 		mElementPlayerBlackScreen.style.display = "";
@@ -7154,13 +7353,19 @@ window.CloudPlayer = function(elid, options){
 			if(mPlaying && !mStopped){
 				var curr_time = 0;
 				if(_source_type == 'camera_records') {
-					curr_time = mCurrentPlayRecord.startUTC + mCurrentRecord_vjs.currentTime()*1000;
+					if (mRecordMode === "timelapse") {
+						curr_time = mTimelapsePlayer.getcurrtime();
+					} else {
+						curr_time = mCurrentPlayRecord.startUTC + mCurrentRecord_vjs.currentTime()*1000;
+					}
 				} else if(_source_type == 'camera_live') {
 					// TODO webrtc
 					if (mUsedPlayer == 'webrtc0' || mUsedPlayer == 'webrtc2') {
 						curr_time = mWebRTC_el ? mWebRTC_el.currentTime : 0;
 					} else if (mUsedPlayer == 'native-hls') {
 						curr_time = mNativeHLS_el ? mNativeHLS_el.currentTime : 0;
+					} else if (mUsedPlayer == 'jpeg') {
+						curr_time = mJpegPlayer.getcurrtime();
 					} else {
 						try {
 							curr_time = self.vjs.currentTime()*1000 
@@ -7210,10 +7415,26 @@ window.CloudPlayer = function(elid, options){
 						}
 						self.play();
 					} else {
-						if (self.time == 0) {
-							_showloading();
+						if(_source_type == 'camera_records') {
+						    if (mRecordMode === "timelapse"){
+							if ( CloudHelpers.getCurrentTimeUTC() - curr_time < 180000) {
+								mTimelapsePlayer.pause();
+								setTimeout(function(){
+									self.setPosition( CloudPlayer.POSITION_LIVE );
+									self.play();
+								}, 10);
+							} 
+						    }
+						} else {
+							if (self.time == 0 || mPosition != -1) {
+//								_showloading( self.options.loaderTimeout || 0 );
+								_showloading();
+							}
+							if (mUsedPlayer == 'jpeg') {
+							} else {
+								console.warn("[PLAYER] Wait stream " + mTimeWaitStartStream);
+							}
 						}
-						console.warn("[PLAYER] Wait stream " + mTimeWaitStartStream);
 					}
 				} else {
 					self.count_ERROR_STREAM_UNREACHABLE = 0;
@@ -7243,8 +7464,9 @@ window.CloudPlayer = function(elid, options){
 						el_player_time.innerHTML = _formatTimeLive();
 						// self.callOnStateChange(vxgcloudplayer.states.PLAYER_PLAYING);
 					}
-
-					_hideloading();
+					if (self.time != 0) {
+						_hideloading();
+					}
 					_hideerror();
 				}
 				if(self.isRange() && self.time > mRangeMax){
@@ -7344,6 +7566,14 @@ window.CloudPlayer = function(elid, options){
 			// console.log("start - 2 min = " + start);
 			_hideBlackScreen();
 			var nCountAfterT = 0;
+			if (len == 0) {
+				setTimeout( function() {
+					self.setPosition(CloudPlayer.POSITION_LIVE);
+					self.play();
+					mCallbacks.executeCallbacks(CloudPlayerEvent.POSITION_JUMPED, { new_pos: CloudHelpers.getCurrentTimeUTC() });
+				},10);
+				return;
+			}
 			for(var i = 0; i < len; i++){
 				rec = r.objects[i];
 				if (rec.size < 500) {
@@ -7372,7 +7602,7 @@ window.CloudPlayer = function(elid, options){
 				
 				if(mCurrentPlayRecord == null && pos >= rec.startUTC && pos <= rec.endUTC){
 					mCurrentPlayRecord = rec;
-                    // console.log("mCurrentPlayRecord selected ", mCurrentPlayRecord);
+					// console.log("mCurrentPlayRecord selected ", mCurrentPlayRecord);
 					break;
 				}
 
@@ -7491,6 +7721,7 @@ window.CloudPlayer = function(elid, options){
 			// vxgcloudplayer.vjs_play(vcp);
 			mCurrentRecord_vjs.off('ended');
 			mNextRecord_vjs.off('ended');
+			
 			function swithPlayers() {
 				console.warn("ended");
 				// stop records
@@ -7520,7 +7751,9 @@ window.CloudPlayer = function(elid, options){
 					mCurrentPlayRecord = mNextPlayRecord;
 					mNextPlayRecord = null;
 					// console.warn("url: " + mCurrentPlayRecord.url);
-					mCurrentRecord_vjs.ready(function(){ mCurrentRecord_vjs.play(); });
+					mCurrentRecord_vjs.ready(function(){ 
+						mCurrentRecord_vjs.play(); 
+					});
 					_prepareNextCameraRecord();
 				}
 			}
@@ -7532,6 +7765,8 @@ window.CloudPlayer = function(elid, options){
 		});
 	}
 
+
+
 	function _loadRecords(_uniqPlay){
 		if(!self.mSrc){
 			self._showerror(CloudReturnCode.ERROR_SOURCE_NOT_CONFIGURED);
@@ -7540,6 +7775,22 @@ window.CloudPlayer = function(elid, options){
 		mTimeWaitStartStream = 0;
 		if(self.mSrc.type == 'camera'){
 			_loadCameraRecords(_uniqPlay);
+		}else{
+			self._showerror(CloudReturnCode.ERROR_INVALID_SOURCE);
+		}
+	}
+
+	function _loadTimelapse(_uniqPlay){
+		if(!self.mSrc){
+			self._showerror(CloudReturnCode.ERROR_SOURCE_NOT_CONFIGURED);
+			return;
+		}
+
+		if(self.mSrc.type == 'camera'){
+			_source_type = 'camera_records';
+			mTimelapsePlayer_el.style.display = '';
+			mTimelapsePlayer.play(300, mPosition);
+			_startPolingTime();
 		}else{
 			self._showerror(CloudReturnCode.ERROR_INVALID_SOURCE);
 		}
@@ -7561,7 +7812,9 @@ window.CloudPlayer = function(elid, options){
 		}
 
 		if(self.mSrc._origJson()['status'] != 'active'){
-			if (self.m.waitSourceActivation == 0){
+			if (self.m.waitSourceActivation == 0 
+			&& self.mSrc._origJson()['status'] != 'setsource'
+			){
 				self._showerror(CloudReturnCode.ERROR_CAMERA_OFFLINE);
 				mCallbacks.executeCallbacks(CloudPlayerEvent.CHANNEL_STATUS, {status: "offline"});
 			}
@@ -7623,6 +7876,7 @@ window.CloudPlayer = function(elid, options){
 		}
 	}
 
+
 	self.setSource = function(src){
 		_hideerror();
 		clearInterval(mPolingCameraStatus);
@@ -7634,6 +7888,9 @@ window.CloudPlayer = function(elid, options){
 			mElementPlay.style.display = "inline-block";
 			mConn = src._getConn();
 		}
+		var origjs = self.mSrc._origJson();
+		self.mSrc._origJson()['status'] = 'setsource';
+		
 		if(self.isRange()){
 			var cur_time = CloudHelpers.getCurrentTimeUTC();
 			if (mRangeMin < cur_time && cur_time < mRangeMax) {
@@ -7646,7 +7903,7 @@ window.CloudPlayer = function(elid, options){
 		}
 		mCallbacks.executeCallbacks(CloudPlayerEvent.SOURCE_CHANGED);
 		/*binary*/
-		var el_player = document.querySelector('.cloudplayer');
+		var el_player = self.player;//document.querySelector('.cloudplayer');
 		if (!el_player) {
 		    return;
 		}
@@ -7663,14 +7920,20 @@ window.CloudPlayer = function(elid, options){
 		} else {
 		    //binary: ptz check abit later
 		    if (!self.options.disableGetClip || self.options.disableGetClip == false) { 
-			el_controls_get_clip.style.display = 'block';
+			if (!CloudHelpers.isIE()) {
+				el_controls_get_clip.style.display = 'block';
+			}
 		    }
 		}
 		if (!self.options.disableGetShot || self.options.disableGetShot == false) { 
-			el_controls_get_shot.style.display = 'block';
+			if (!CloudHelpers.isIE()) {
+				el_controls_get_shot.style.display = 'block';
+			}
 		}
 		
 		if (mConn) {
+		    mTimelapsePlayer.setApi(mConn._getAPI());
+		
 		    var el_controls_ptz_top = self.player.getElementsByClassName('ptz-top')[0];
 		    var el_controls_ptz_bottom = self.player.getElementsByClassName('ptz-bottom')[0];
 		    var el_controls_ptz_left = self.player.getElementsByClassName('ptz-left')[0];
@@ -7680,9 +7943,11 @@ window.CloudPlayer = function(elid, options){
 		    mConn._getAPI().cameraPtz(self.mSrc.getID()).done(function(r){
 			console.log(r);
 			var actions = r.actions;
-			self.PTZActions = actions;
+			self.mPTZActions = actions;
 			if ((actions !== undefined) && (actions != null) && (actions.length > 0)){ 
-			    el_controls_ptz_switcher.style.display = 'block';
+			    if (self.mPTZShow) {
+				el_controls_ptz_switcher.style.display = 'block';
+			    }
 			    el_controls_ptz_top.style.display = actions.indexOf("top") > -1 ? 'block' : 'none';
 			    el_controls_ptz_bottom.style.display = actions.indexOf("bottom") > -1 ? 'block' : 'none';
 			    el_controls_ptz_left.style.display = actions.indexOf("left") > -1 ? 'block' : 'none';
@@ -7697,17 +7962,20 @@ window.CloudPlayer = function(elid, options){
 			el_controls_ptz_switcher.style.display = 'none';
 		    });
 		    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) { //check the ability capture audio
-			mConn._getAPI().cameraAudio(self.mSrc.getID()).done( function(answer){
-				console.log(answer);
-				if (answer.caps !== undefined && answer.caps.backward_formats !== undefined && answer.caps.backward_formats.length > 0) {
-					el_controls_microphone.classList.remove('disabled');
-				} else {
+			if (self.options.disableBackwardAudio !== true) {
+				mConn._getAPI().cameraAudio(self.mSrc.getID()).done( function(answer){
+					console.log(answer);
+					if (answer.caps !== undefined && answer.caps.backward_formats !== undefined && answer.caps.backward_formats.length > 0) {
+						mBackwardAudioFormats = answer.caps.backward_formats;
+						el_controls_microphone.classList.remove('disabled');
+					} else {
+						el_controls_microphone.classList.add('disabled');
+					}
+				}).fail(function(err){
+					console.log('Backward channel request:' + err);
 					el_controls_microphone.classList.add('disabled');
-				}
-			}).fail(function(err){
-				console.log('Backward channel request:' + err);
-				el_controls_microphone.classList.add('disabled');
-			});
+				});
+			}
 		    } else {
 			el_controls_microphone.classList.add('disabled');
 		    }
@@ -7827,16 +8095,16 @@ window.CloudPlayer = function(elid, options){
 
 	self.setPlayerFormat = function(sMode){
 		sMode = sMode.toLowerCase();
-		if(sMode != 'webrtc' && sMode != 'flash' && sMode != 'html5'){
+		if(sMode != 'webrtc' && sMode != 'flash' && sMode != 'html5' && sMode != 'jpeg'){
 			console.error("Player format expected 'webrtc' or 'flash' or 'html5'");
 			return;
 		}
 		self.mPlayerFormat = sMode;
-			try {
-			    localStorage.setItem("preferred_player_format", self.mPlayerFormat);
-			}catch(e){
-			    console.error("[CloudPlayer] error save format: ", e)
-			}
+		try {
+			localStorage.setItem("preferred_player_format", self.mPlayerFormat);
+		}catch(e){
+			console.error("[CloudPlayer] error save format: ", e)
+		}
 		_updatePlayerFormatUI();
 	}
 
@@ -7884,7 +8152,7 @@ window.CloudPlayer = function(elid, options){
 		var now = new Date();
 		position = now.getTime();
 	    }
-            position -= a*1000;
+            position -= b*1000;
 	    var shareclip = self.player.getElementsByClassName('cloudplayer-share-clip')[0];
 	    
 	    if ((shareclip !== undefined ) 
@@ -7944,8 +8212,9 @@ window.CloudPlayer = function(elid, options){
 		    videotag = self.player.getElementsByClassName('cloudplayer-webrtc')[0];
 		}
 		*/
-
-		var vtags = self.player.getElementsByTagName('video');
+		
+		var videotags = self.player.getElementsByClassName('allvideotags')[0];
+		var vtags = videotags.getElementsByTagName('video');
 		for (var i =0; i < vtags.length; i++) {
 		    var el = vtags[i];
 		    var isDisp = el.currentStyle ? el.currentStyle.display :  getComputedStyle(el, null).display;
@@ -7969,13 +8238,23 @@ window.CloudPlayer = function(elid, options){
 			if (context != null) {
 			    context.fillRect(0, 0, width, height);
 			    context.drawImage(videotag, 0, 0, width, height);
-			    var downloadLink = document.createElement('a');
-			    downloadLink.setAttribute('download', 'snapshot.png');
-			    stub.toBlob(function(blob) {
-				var url = URL.createObjectURL(blob);
-				downloadLink.setAttribute('href', url);
-				downloadLink.click();
-			    });
+			    if (stub.msToBlob !== undefined) {
+				try {
+					var blob = stub.msToBlob();
+					window.navigator.msSaveOrOpenBlob(blob, 'snapshot.png');
+				} catch (e) {
+					console.warn("Can't create snapshot due error: " + e.toString());
+				}
+			    } else {
+				var downloadLink = document.createElement('a');
+				downloadLink.setAttribute('download', 'snapshot.png');
+				stub.toBlob(function(blob) {
+				    var url = URL.createObjectURL(blob);
+				    downloadLink.setAttribute('href', url);
+				    downloadLink.click();
+				});
+			    }
+
 			}
 		    }
 		}
@@ -8029,7 +8308,7 @@ window.CloudPlayer = function(elid, options){
 			dx = (canvasw - width)/2;
 		    }
 		    
-		    console.log("Snapshot resolution: " + width + "x" + height + " for:" + mUsedPlayer);
+		    //console.log("Snapshot resolution: " + width + "x" + height + " for:" + mUsedPlayer);
 
 		    context = element.getContext('2d');
 		    if (context != null) {
@@ -8041,6 +8320,24 @@ window.CloudPlayer = function(elid, options){
 	}
 	
 	var backwardPlayer = null;
+	
+	self.sendBackwardAudio = function() {
+	    if (self.options.disableBackwardAudio === true) {
+		console.warn("Backward audio is disabled by configuration");
+		return -1;
+	    }
+	    if (mPosition != CloudHelpers.POSITION_LIVE)  {
+		console.warn("Can't control backward audio while player isn't LIVE mode");
+		return -2;
+	    }
+	    if (mBackwardAudioFormats === undefined) {
+		console.warn("Camera doesn't supports backward audio");
+		return -3;
+	    }
+	    self._sendBackwardAudio();
+	    return 0;
+	}
+	
 	self._sendBackwardAudio = function(isStarted) {
 		var element		= self.player.getElementsByClassName('cloudplayer-microphone')[0];
 		var pseudoplayer	= self.player.getElementsByClassName('cloudplayer-backward-webrtc')[0];
@@ -8088,10 +8385,44 @@ window.CloudPlayer = function(elid, options){
 	
 	self.setPosition = function(t){
 		mPosition = t;
-		if(mPosition == CloudHelpers.POSITION_LIVE){
+
+		showTimelapseControls(false);
+
+		if(mPosition == -1){
+			if (self.mPreferredPlayerFormat === undefined){
+				self.enableModeSetting();
+			}
+			self.collapseMenu();
+
 			mLiveModeAutoStart = true;
+			el_controls_ptz_switcher.classList.remove('inactive');
+			el_controls_microphone.classList.remove('inactive');
+			if (self.mPTZActions != null && self.mPTZShow) {
+				el_controls_ptz_switcher.style.display = 'block';
+			}
+			el_record_mode.style.display = "none";
 		} else {
+			self.disableModeSetting();
+			self.collapseMenu();
+
 			self.time = t;
+			self.player.classList.remove('showing-ptz');
+			el_controls_ptz_switcher.classList.add('inactive');
+			el_controls_microphone.classList.add('inactive');
+			
+			el_record_mode.classList.remove('mode-timelapse');
+			el_record_mode.classList.add('mode-records');
+			/*Binary timelapse debug mode*/
+			if (self.options !== undefined && self.options.debugTimelapse !== undefined) {
+				el_record_mode.style.display = '';
+			}
+			mRecordMode = "records";
+			
+			setTimeout(function(){
+				if (self.isBackwardAudioStarted == true) {
+					self._sendBackwardAudio();
+				}
+			}, 100);
 		}
 	}
 	
@@ -8107,7 +8438,9 @@ window.CloudPlayer = function(elid, options){
 				if ((mUsedPlayer == 'webrtc0' || mUsedPlayer == 'webrtc2')
 					&& mWebRTC_el && mWebRTC_el.currentTime != 0){
 					return CloudHelpers.getCurrentTimeUTC() + (mConn ? mConn.getServerTimeDiff() : 0);
-				} else if(mUsedPlayer == 'native-hls' && mNativeHLS_el && mNativeHLS_el.currentTime != 0){
+				} else if(mUsedPlayer == 'native-hls' && mNativeHLS_el && mNativeHLS_el.currentTime != 0) {
+					return CloudHelpers.getCurrentTimeUTC() + (mConn ? mConn.getServerTimeDiff() : 0);
+				} else if(mUsedPlayer == 'jpeg' ) {
 					return CloudHelpers.getCurrentTimeUTC() + (mConn ? mConn.getServerTimeDiff() : 0);
 				} else if( (mUsedPlayer != 'webrtc0' && mUsedPlayer != 'webrtc2')
 					&& self.vjs && self.vjs.currentTime() != 0){
@@ -8161,15 +8494,23 @@ window.CloudPlayer = function(elid, options){
 		if (self.isRange() && mPosition > mRangeMax) {
 			mPosition = mRangeMin;
 		}
-
+		
+		mCallbacks.executeCallbacks(CloudPlayerEvent.PLAYED, event);
+		
 		if(mPosition == -1){
 			_loadLiveUrl(mUniqPlay);
 			mCallbacks.executeCallbacks(CloudPlayerEvent.POSITION_JUMPED, {new_pos: CloudHelpers.getCurrentTimeUTC()});
 		}else{
-			console.warn("Try load records from " + CloudHelpers.formatUTCTime(mPosition));
-			_loadRecords(mUniqPlay);
+			if (mRecordMode === "records") {
+				console.warn("Try load records from " + CloudHelpers.formatUTCTime(mPosition));
+				_loadRecords(mUniqPlay);
+			} else {
+				console.log('TODO: timelapse');
+				_loadTimelapse(mUniqPlay);
+			}
 		}
-		_showloading();
+//		_showloading();
+		_showloading( self.options.loaderTimeout || 0 );
 	}
 	
 	self.pause = function(event) {
@@ -8186,6 +8527,10 @@ window.CloudPlayer = function(elid, options){
 			    mWebRTC0_Player.pause();
 			} else if (mWebRTC2_Player != null) {
 			    mWebRTC2_Player.pause();
+			}
+		    } else if (self.mPlayerFormat == 'jpeg') {
+			if (mJpegPlayer) {
+			    mJpegPlayer.pause();
 			}
 		    } else {
 			self.vjs.pause();
@@ -8205,6 +8550,11 @@ window.CloudPlayer = function(elid, options){
 			} else if (mWebRTC2_Player != null) {
 			    mWebRTC2_Player.play();
 			}
+		    } else if (self.mPlayerFormat == 'jpeg') {
+			if (mJpegPlayer) {
+			    var redrawPeriod = self.options.jpegRedrawPeriod || 1000;
+			    mJpegPlayer.play( mConn._getAPI(), self.mSrc, redrawPeriod );
+			}
 		    } else {
 			self.vjs.play();
 		    }
@@ -8216,6 +8566,25 @@ window.CloudPlayer = function(elid, options){
 	    }
 	}
 	
+	self.getImages = function() {
+		if (mConn) {
+			var options = {};
+			var now = new Date();
+			var time = now.getTime();
+			var utctime = CloudHelpers.formatUTCTime(time);
+				
+			options.order_by = "-time";
+			options.limit = 5;
+			options.end = utctime;
+		
+			mConn._getAPI().cameraImages(options).done(function(result){
+				console.log('done');
+			}).fail( function( err ){
+				console.log('error');
+			});
+		}
+	}
+	
 	self.stop = function(who_call_stop){
 		console.log("[PLAYER] stop called " + who_call_stop);
 		mUniqPlay = null; // stop any async requests or ignore results
@@ -8223,7 +8592,10 @@ window.CloudPlayer = function(elid, options){
 		mPlaying = false;
 		mPausing = false;
 		mLiveModeAutoStart = false;
-		
+
+		clearInterval(mPolingCameraStatus);
+		mCallbacks.executeCallbacks(CloudPlayerEvent.STOPED, who_call_stop);
+
 		if ((	   (who_call_stop === 'by_webrtc2_error') 
 			|| (who_call_stop === 'by_webrtc0_error')
 		    ) 
@@ -8257,7 +8629,11 @@ window.CloudPlayer = function(elid, options){
 		if (mNativeHLS_Player != null) {
 			mNativeHLS_Player.stop();
 			mNativeHLS_el.style.display = 'none';
-		}	
+		}
+		if (mJpegPlayer != null) {
+			mJpegPlayer.stop();
+			mJpegPlayer_el.style.display = "none";
+		}
 
 		el_stop.style.display = "none";
 		mElementPlay.style.display = "inline-block";
@@ -8265,7 +8641,10 @@ window.CloudPlayer = function(elid, options){
 		_stopPolingTime();
 		clearInterval(mExpireHLSTimeInterval);
 		self._stopPolingMediaTicket();
-		_hideloading();
+		
+		if (who_call_stop !== 'by_play') { //prevent loader's wink on reset-play
+			_hideloading();
+		}
 		// vxgcloudplayer.stopPolingCameraLife();
 		// self.stopPolingFlashStats();
 		// self.currentRecordsList = undefined;
@@ -8313,7 +8692,11 @@ window.CloudPlayer = function(elid, options){
 	}
 
 	self._setError = function(error){
-		setTimeout(function(){self.stop("by_setError")},10);
+		setTimeout(function(){
+			self.stop("by_setError");
+			mElError.style.display = "block";
+			mElErrorText.style.display = "inline-block";
+		},10);
 		self.mLastError = error;
 		if(mCallback_onError){
 			mCallbacks.executeCallbacks(CloudPlayerEvent.ERROR, error)
@@ -8355,18 +8738,30 @@ window.CloudPlayer = function(elid, options){
 			el_controls_zoom.style.display = 'none';
 		}
 	}
+
+	self.showPTZControl = function (isShow) {
+		self.mPTZShow = isShow;
+		if (isShow) {
+			if ((self.mPTZActions !== undefined) && (self.mPTZActions != null) && (self.mPTZActions.length > 0)){ 
+				el_controls_ptz_switcher.style.display = 'block';
+			}
+		}  else {
+			el_controls_ptz_switcher.style.display = 'none';
+		}
+	}
 	
 	/* end public functions */
 	function _applyFuncTo(arr, val, func) {
-		for (var i in arr) {
+		//for (var i in arr) {
+		for(var i = 0 ; i < arr.length; i++){
 			func(arr[i], val);
 		}
 	}
 	
-	
 	function _initZoomControls(){
 		self.currentZoom = 0;
 
+		var el_showzoom_button =  self.player.getElementsByClassName('cloudplayer-show-zoom')[0];
 		var el_controls_zoom = self.player.getElementsByClassName('cloudplayer-controls-zoom')[0];
 		var el_controls_zoom_position = self.player.getElementsByClassName('cloudplayer-controls-zoom-position')[0];
 		var el_zoomUp = self.player.getElementsByClassName('cloudplayer-zoom-up')[0];
@@ -8380,10 +8775,10 @@ window.CloudPlayer = function(elid, options){
 		_players.push(mNativeVideo1_el);
 		_players.push(mNativeVideo2_el);
 		_players.push(self.player.getElementsByClassName('cloudplayer-webrtc')[0]);
+		_players.push(self.player.getElementsByClassName('cloudplayer-jpeg')[0]);
 		
 		if(self.options.disableZoomControl && self.options.disableZoomControl == true){
 			el_controls_zoom_switcher.style.display = 'none';
-			el_controls_zoom.style.display = 'none';
 		}
 
 		self.zoomCursorDownBool = false;
@@ -8455,10 +8850,10 @@ window.CloudPlayer = function(elid, options){
 
 		self.zoomCursorDown = function(e){
 			if (e.pageX === undefined) {
-			    e.pageX = e.touches[0].pageX;
+				e.pageX = e.touches[0].pageX;
 			}
 			if (e.pageY === undefined) {
-			    e.pageY = e.touches[0].pageY;
+				e.pageY = e.touches[0].pageY;
 			}
 			self.zoomCursorX = e.pageX;
 			self.zoomCursorY = e.pageY;
@@ -8477,10 +8872,10 @@ window.CloudPlayer = function(elid, options){
 		self.zoomCursorMove = function(e){
 			if(self.zoomCursorDownBool == true){
 				if (e.pageX === undefined) {
-				    e.pageX = e.touches[0].pageX;
+					e.pageX = e.touches[0].pageX;
 				}
 				if (e.pageY === undefined) {
-				    e.pageY = e.touches[0].pageY;
+					e.pageY = e.touches[0].pageY;
 				}
 
 				var diffX = self.zoomCursorX - e.pageX;
@@ -8531,15 +8926,13 @@ window.CloudPlayer = function(elid, options){
 		el_zoomPositionCursor.addEventListener('mousemove',self.zoomCursorMove,false);
 		el_zoomPositionCursor.addEventListener('mouseleave',self.zoomCursorUp,false);
 		el_zoomPositionCursor.addEventListener('mouseup',self.zoomCursorUp,false);
-
-		el_zoomPositionCursor.addEventListener('touchstart',self.zoomCursorDown,false);
-		el_zoomPositionCursor.addEventListener('touchmove',self.zoomCursorMove,false);
-		el_zoomPositionCursor.addEventListener('touchend',self.zoomCursorUp,false);
-
 		el_zoomProgress.addEventListener('mousedown',self.zoomProgressDown,false);
 		el_zoomProgress.addEventListener('mousemove',self.zoomProgressMove,false);
 		el_zoomProgress.addEventListener('mouseleave',self.zoomProgressLeave,false);
 		el_zoomProgress.addEventListener('mouseup',self.zoomProgressUp,false);
+		el_zoomPositionCursor.addEventListener('touchstart',self.zoomCursorDown,false);
+		el_zoomPositionCursor.addEventListener('touchmove',self.zoomCursorMove,false);
+		el_zoomPositionCursor.addEventListener('touchend',self.zoomCursorUp,false);
 	}
 	_initZoomControls();
 	
@@ -8565,7 +8958,8 @@ window.CloudPlayer = function(elid, options){
 				self.mstreams.audio_on = '';
 				self.mstreams.audio_off = '';
 				self.mstreams.current = r.live_ms_id;
-				for(var i in r.mstreams_supported){
+				//for(var i in r.mstreams_supported){
+				for(var i = 0 ; i < r.mstreams_supported.length; i++){
 					if(r.mstreams_supported[i].as_id && r.mstreams_supported[i].vs_id){
 						self.mstreams.audio_on = r.mstreams_supported[i].id;
 					}else if(r.mstreams_supported[i].vs_id){
@@ -8603,20 +8997,25 @@ window.CloudPlayer = function(elid, options){
 		var el_volumeSlider = self.player.getElementsByClassName('cloudplayer-volume')[0];
 	
 		self.m = self.m || {};
-		self.m.volume = 0.5;
-
+		self.m.volume = 1.0;
 
 		el_volumeMute.style.display='inline-block';
+
+		if (self.isMobile) {
+			el_volumeContainer.style.display='none';
+		}
+		
 		if (self.m.mute) {
 			el_volumeContainer.style.display='none';
 			el_volumeMute.classList.add("unmute");
 		} else {
-			el_volumeContainer.style.display='flex';
+			if (!self.isMobile) {
+				el_volumeContainer.style.display='flex';
+			}
 			el_volumeMute.classList.remove("unmute");
 		}
 
 		function applyVolumeToPlayers(v) {
-
 		        var muted = (v == 0)? true : false;
 			player_native_hls	= document.getElementById(self.elid+"_native_hls");
 			//player_vjs2		= document.getElementById(self.elid+"_vjs2");
@@ -8651,11 +9050,15 @@ window.CloudPlayer = function(elid, options){
 				return;
 			}
 			self.m.mute = !self.m.mute;
-			if (self.m.mute) {
-				el_volumeContainer.style.display='none';
+			if (self.m.mute ) {
+				if (!self.isMobile) {
+					el_volumeContainer.style.display='none';
+				}
 				el_volumeMute.classList.add("unmute");
 			} else {
-				el_volumeContainer.style.display='flex';
+				if (!self.isMobile) {
+					el_volumeContainer.style.display='flex';
+				}
 				el_volumeMute.classList.remove("unmute");
 			}
 			var v = self.m.mute? 0: '' + self.m.volume.toFixed(1);
@@ -8860,8 +9263,10 @@ window.CloudPlayer = function(elid, options){
 		// TODO keep player element
 		self.vjs.el().style.display = "none";
 		//self.vjs2.el().style.display = "none";
+		mJpegPlayer_el.style.display = "none";
 		mNativeHLS_el.style.display = "none";
 		mWebRTC_el.style.display = "block";
+		
 		if(!window['CloudPlayerWebRTC0']){
 			console.error("Not found module CloudPlayerWebRTC0");
 			return;
@@ -8917,7 +9322,10 @@ window.CloudPlayer = function(elid, options){
 		self.vjs.el().style.display = "none";
 		//self.vjs2.el().style.display = "none";
 		mNativeHLS_el.style.display = "none";
+		mJpegPlayer_el.style.display = "none";
 		mWebRTC_el.style.display = "block";
+		
+		
 		if(!window['CloudPlayerWebRTC2']){ // webrtc2
 			console.error("Not found module CloudPlayerWebRTC2");
 			return;
@@ -9041,7 +9449,9 @@ window.CloudPlayer = function(elid, options){
 		self.vjs.el().style.display = "none";
 		//self.vjs2.el().style.display = "none";
 		mWebRTC_el.style.display = "none";
+		mJpegPlayer_el.style.display = "none";
 		mNativeHLS_el.style.display = "block";
+		
 		if(!window['CloudPlayerNativeHLS']){
 			console.error("[PLAYER]  Not found module CloudPlayerNativeHLS");
 			return;
@@ -9053,6 +9463,34 @@ window.CloudPlayer = function(elid, options){
 		_beforePlay();
 		_startPolingTime();
 	}
+
+	function _polingLoadCameraLiveUrl_Jpeg(_uniqPlay, live_urls){
+		if (!live_urls.hls) {
+			self._showerror(CloudReturnCode.NOT_SUPPORTED_FORMAT);
+			return;
+		}
+
+		mUsedPlayer = 'jpeg';
+		mElPlrType.innerHTML = "Used player: Jpeg";
+
+		self.vjs.el().style.display = "none";
+		mWebRTC_el.style.display = "none";
+		mNativeHLS_el.style.display = "none";
+		mJpegPlayer_el.style.display = "block";
+
+		if(!window['CloudPlayerJpegLive']){
+			console.error("[PLAYER]  Not found module CloudPlayerJpegLive");
+			return;
+		}
+		
+		var redrawPeriod = self.options.jpegRedrawPeriod || 1000;
+		mJpegPlayer.play( mConn._getAPI(), self.mSrc, redrawPeriod );
+		//mNativeHLS_Player = new CloudPlayerNativeHLS(mNativeHLS_el, live_urls.hls);
+		//mNativeHLS_Player.play();
+		_beforePlay();
+		_startPolingTime();
+	}
+
 
 	function _polingLoadCameraLiveUrl_HLS (_uniqPlay, live_urls){
 		if (!live_urls.hls) {
@@ -9185,7 +9623,7 @@ window.CloudPlayer = function(elid, options){
 				if(mLiveModeAutoStart){
 					if(new_status == 'active'){
 						self.play();
-					}else{
+					} else {
 						self.stop("by_poling_camera_status");
 						self._showerror(CloudReturnCode.ERROR_CAMERA_OFFLINE);
 						_startPolingCameraStatus(_uniqPlay);
@@ -9269,6 +9707,8 @@ window.CloudPlayer = function(elid, options){
 					_polingLoadCameraLiveUrl_WebRTC0(_uniqPlay, live_urls);
 				} else if (live_urls.webrtc && webrtc_major_version === 2 && mPlayerFormatForced === 'webrtc') {
 					_polingLoadCameraLiveUrl_WebRTC2(_uniqPlay, live_urls);
+				} else if ( mPlayerFormatForced === 'jpeg') {
+					_polingLoadCameraLiveUrl_Jpeg(_uniqPlay, live_urls);
 				} else {
 					self._showerror(CloudReturnCode.NOT_SUPPORTED_FORMAT);
 				}
@@ -9280,7 +9720,7 @@ window.CloudPlayer = function(elid, options){
 					_polingLoadCameraLiveUrl_WebRTC0(_uniqPlay, live_urls);
 				} else if (live_urls.webrtc && webrtc_major_version === 2 && CloudHelpers.supportWebRTC()){
 					_polingLoadCameraLiveUrl_WebRTC2(_uniqPlay, live_urls);
-				}else{
+				} else {
 					_polingLoadCameraLiveUrl_HLS(_uniqPlay, live_urls);
 				}
 			}
@@ -9295,6 +9735,10 @@ window.CloudPlayer = function(elid, options){
 
 			if(self.mPlayerFormat == 'html5'){
 				_polingLoadCameraLiveUrl_HLS(_uniqPlay, live_urls);
+			}
+			
+			if(self.mPlayerFormat == 'jpeg'){
+				_polingLoadCameraLiveUrl_Jpeg(_uniqPlay, live_urls);
 			}
 		}).fail(function(r){
 			console.error(r);
@@ -9340,6 +9784,12 @@ window.CloudPlayer = function(elid, options){
 
 		mPlaybackPlayer2.reset();
 		mPlaybackPlayer2.el().style.display = "none";
+		
+		mJpegPlayer.reset();
+		mJpegPlayer_el.style.display = "none";
+		
+		mTimelapsePlayer.reset();
+		mTimelapsePlayer_el.style.display = "none";
 
 		self.volume(self.m.volume);
 		_stopPolingTime();
@@ -9363,9 +9813,9 @@ window.CloudPlayer = function(elid, options){
 		el_info.style.opacity = val;
 		mElementCalendar.style.opacity = val;
 		el_controls_ptz_container.style.opacity = val;
-        el_controls_zoom_container.style.opacity = val;
-        el_calendar_container.style.opacity = val;
-        el_live_container.style.opacity = val;
+		el_controls_zoom_container.style.opacity = val;
+		el_calendar_container.style.opacity = val;
+		el_live_container.style.opacity = val;
 		var el_selectcliptime = self.player.getElementsByClassName('cloudplayer-selectcliptime')[0];
 		if (!parseInt(val)) el_selectcliptime.style.display = "none";
 
@@ -9389,11 +9839,10 @@ window.CloudPlayer = function(elid, options){
 	
 	self.restartTimeout();
 	
-
+	self.player.addEventListener('mousedown', self.restartTimeout, true);
 	self.player.addEventListener('mousemove', self.restartTimeout, true);
 	self.player.addEventListener('touchmove', self.restartTimeout, true);
 	self.player.addEventListener('touchstart', self.restartTimeout, true);
-	
 
 	mElementPlay.onclick = function() {
 	    self.play('by_button_click');
@@ -9428,15 +9877,45 @@ window.CloudPlayer = function(elid, options){
 	};
 	
 	self.setFullscreenCallback = function(func) {
-	    self.f_callbackFullscreenFunc = func;
-	}   
-	
+		self.f_callbackFullscreenFunc = func;
+	}
+
+	self.setIOsFullscreenCallback = function(func) {
+		self.f_callbackIOsFullscreenFunc = func;
+	}
+
+	self.getCurrentVideoTag = function (){
+		var videotag = undefined;
+		var videotags = self.player.getElementsByClassName('allvideotags')[0];
+		var vtags = videotags.getElementsByTagName('video');
+		for (var i =0; i < vtags.length; i++) {
+		    var el = vtags[i];
+		    var isDisp = el.currentStyle ? el.currentStyle.display :  getComputedStyle(el, null).display;
+		    var isParentDisp = el.parentElement.currentStyle ? el.parentElement.currentStyle.display :  getComputedStyle(el.parentElement, null).display;
+		    if (el.classList.contains('vjs-tech')) {
+			isDisp = isParentDisp;
+		    }
+		    if (isDisp === 'block' || isDisp === 'inline-block') {
+			videotag = el;
+			break;
+		    }
+		}
+		return videotag;
+	}
+
+	self.printDebug = function( what ) {
+		var dbg = self.player.getElementsByClassName('cloudplayer-debug')[0];
+		dbg.style.display = "block";
+		var t = document.createTextNode(what + '\n');
+		dbg.appendChild(t); 
+	}
+
 	self.initFullscreenControls = function(){
 		var el_fullscreen = self.player.getElementsByClassName('cloudplayer-fullscreen')[0];
 		var _prevHeight, _prevWidth, _prevMaxW , _prevMaxH;
 		self.changedFullscreen = function(){
 			console.log('changedFullscreen: ' + document.webkitIsFullScreen);
-			if (document.webkitIsFullScreen){
+			if (document.webkitIsFullScreen || document.mozFullScreen || document.msFullscreenElement ){
 				_prevHeight = self.player.style.height;
 				_prevWidth = self.player.style.width;
 				_prevMaxH = self.player.style.maxHeight;
@@ -9452,11 +9931,11 @@ window.CloudPlayer = function(elid, options){
 				if (screen.orientation && screen.orientation.lock) {
 					screen.orientation.lock('landscape');
 				}
-				
+
 				if (self.f_callbackFullscreenFunc) {
-				    self.f_callbackFullscreenFunc();
+				    self.f_callbackFullscreenFunc(true);
 				}
-			}else{
+			} else {
 				//_prevHeight
 				self.player.style.height = _prevHeight;
 				self.player.style.width = _prevWidth;
@@ -9466,9 +9945,9 @@ window.CloudPlayer = function(elid, options){
 
 				// self.size(self.playerWidth + 'px', self.playerHeight + 'px');
 				console.log('changedFullscreen -> NOT fullscreen');
-				
+
 				if (self.f_callbackFullscreenFunc) {
-				    self.f_callbackFullscreenFunc();
+				    self.f_callbackFullscreenFunc(false);
 				}
 			}
 		};
@@ -9479,13 +9958,17 @@ window.CloudPlayer = function(elid, options){
 
 		self.fullscreen = function(){
 			console.log("fullscreen: clicked");
+			if(CloudHelpers.isIOS()){
+				self.f_callbackIOsFullscreenFunc();
+			}
+
 			if(document.webkitIsFullScreen == true){
 				document.webkitCancelFullScreen();
 			} else if(document.mozFullScreen){
 				document.mozCancelFullScreen();
 			} else if(document.msFullscreenElement && document.msFullscreenElement != null){
 				document.msExitFullscreen();
-			}else{
+			} else {
 				if(self.player.mozRequestFullScreen) {
 					self.player.mozRequestFullScreen();
 				} else if(self.player.requestFullscreen) {
@@ -9494,10 +9977,9 @@ window.CloudPlayer = function(elid, options){
 					self.player.webkitRequestFullscreen();
 				} else if(self.player.msRequestFullscreen) {
 					self.player.msRequestFullscreen();
-				}
+				} 
 			}
 		};
-		
 		el_fullscreen.onclick = self.fullscreen;
 	}
 	self.initFullscreenControls();
@@ -9519,7 +10001,12 @@ window.CloudPlayer = function(elid, options){
 	}
 	self.initHLSMechanism();
 	window._cloudPlayers[elid] = self;
-        self.pano = CloudPano(self.player.getElementsByClassName('allvideotags')[0],self);
+
+	if (!CloudHelpers.isIE()){
+		self.pano = CloudPano(self.player.getElementsByClassName('allvideotags')[0],self);
+	} else {
+		self.pano = null;
+	}
 
 	self.enableSpeedSetting = function () {
 		mElSettings_speed_container.classList.add('enabled');
@@ -9534,7 +10021,12 @@ window.CloudPlayer = function(elid, options){
 		mElSettings_format_container.classList.remove('enabled');
 	}
 	
-	
+	self.collapseMenu = function(){
+		el_player.classList.remove('showing-format-selection');
+		el_player.classList.remove('showing-dewarping-selection');
+		el_player.classList.remove('showing-speed-selection');
+	}
+
 	if (self.mPreferredPlayerFormat !== undefined)
 		self.disableModeSetting();
 	else	
@@ -9929,7 +10421,9 @@ window.CloudPlayerNativeVideo = function(elId){
 			mVideoEl.appendChild(mSourceEl);
 		}
 		mVideoEl.pause();
-		mVideoEl.currentTime = 0;
+		if(!CloudHelpers.isIE()){
+			mVideoEl.currentTime = 0;
+		}
 		mSourceEl.setAttribute('src', s[0].src);
 		mVideoEl.load();
 		// self.play();
@@ -9939,7 +10433,9 @@ window.CloudPlayerNativeVideo = function(elId){
 	self.currentTime = function(v) {
 		if (v !== undefined) {
 			mCurrentTime = v;
-			mVideoEl.currentTime = v;
+			if(!CloudHelpers.isIE()){
+				mVideoEl.currentTime = v;
+			}
 			return;
 		}
 		return mVideoEl.currentTime || mCurrentTime;
@@ -10343,7 +10839,7 @@ window.CloudPlayerWebRTC2 = function(objVideoEl, strConnectionUrl, arrIceServers
             console.error("[WEBRTC2] error on getUserMedia (1) a1 = ", a1);
             console.error("[WEBRTC2] error on getUserMedia (1) a2 = ", a2);
 		});
-    }*/
+	}*/
 
 	self.resetState = function() {
 		m_objWS.close();    // It will call onServerClose()
@@ -10385,7 +10881,7 @@ window.CloudPlayerWebRTC2 = function(objVideoEl, strConnectionUrl, arrIceServers
         console.error(_TAG + "onAutoplayBlocked");
     }
     
-    function _checkAutoPlay(p) {
+	function _checkAutoPlay(p) {
 		var s = '';
 		if (window['Promise']) {
 			s = window['Promise'].toString();
@@ -10415,98 +10911,96 @@ window.CloudPlayerWebRTC2 = function(objVideoEl, strConnectionUrl, arrIceServers
 		} else {
 			console.error(_TAG + "_checkAutoplay: could not work in your browser ", p);
 		}
-    }
+	}
     
-    function _videoOnLoadedData() {
-        console.warn(_TAG + "loadeddata");
-        console.warn(_TAG + "currentTime = " + m_objVideoEl.currentTime);
-    }
+	function _videoOnLoadedData() {
+		console.warn(_TAG + "loadeddata");
+		console.warn(_TAG + "currentTime = " + m_objVideoEl.currentTime);
+	}
 
-    self.initCalbacks = function () {
-        if (m_objVideoEl) {
-            m_objVideoEl.addEventListener("loadeddata", _videoOnLoadedData, true);
-        }
-    }
+	self.initCalbacks = function () {
+		if (m_objVideoEl) {
+			m_objVideoEl.addEventListener("loadeddata", _videoOnLoadedData, true);
+		}
+	}
 
-    self.removeCalbacks = function () {
-        if (m_objVideoEl) {
-            m_objVideoEl.removeEventListener("loadeddata", _videoOnLoadedData, true);
-        }
-    }
+	self.removeCalbacks = function () {
+		if (m_objVideoEl) {
+			m_objVideoEl.removeEventListener("loadeddata", _videoOnLoadedData, true);
+		}
+	}
 
-    self.createWatchingConnection = function(strSessionPartnerPeerUID) {
+	self.createWatchingConnection = function(strSessionPartnerPeerUID) {
 		// Reset connection attempts because we connected successfully
 		connect_attempts = 0;
-        console.assert( !(strSessionPartnerPeerUID in m_mapPeers) );
+		console.assert( !(strSessionPartnerPeerUID in m_mapPeers) );
 		objPeer = new RTCPeerConnection(m_objRTCConfiguration);
 		objPeer.strPeerUID = strSessionPartnerPeerUID;
-        m_mapPeers[strSessionPartnerPeerUID] = objPeer;
+		m_mapPeers[strSessionPartnerPeerUID] = objPeer;
 		objPeer.onaddstream = self.onRemoteStreamAdded;
 		objPeer.onicecandidate = function(event) {
-            if (event.candidate == null) {
-                console.error("[WEBRTC2] ICE Candidate was null, done");
-                return;
-            }
-            m_objWS.send(JSON.stringify({'to': strSessionPartnerPeerUID, 'ice': event.candidate}));
+			if (event.candidate == null) {
+				console.error("[WEBRTC2] ICE Candidate was null, done");
+				return;
+			}
+			m_objWS.send(JSON.stringify({'to': strSessionPartnerPeerUID, 'ice': event.candidate}));
 		};
 		console.log("[WEBRTC2] Created peer connection for call, waiting for SDP");
 	}
 
-    self.getUserMediaConstraints = function() {
-        var constraints = {};
-        // this must be configurable
-        constraints.audio = m_bSendAudio;
-        constraints.video = m_bSendVideo;
-        try {
-            console.warn(_TAG + "getSupportedConstraints: ", navigator.mediaDevices.getSupportedConstraints());
-        } catch(e) {
-            console.error(_TAG + "error on getSupportedConstraints", e);
-        }
-        return constraints;
-    }
-
-    self.createPublishingConnection = function(strSessionPartnerPeerUID) {
+	self.getUserMediaConstraints = function() {
+		var constraints = {};
+		// this must be configurable
+		constraints.audio = m_bSendAudio;
+		constraints.video = m_bSendVideo;
+		try {
+			console.warn(_TAG + "getSupportedConstraints: ", navigator.mediaDevices.getSupportedConstraints());
+		} catch(e) {
+			console.error(_TAG + "error on getSupportedConstraints", e);
+		}
+		return constraints;
+	}
+	self.createPublishingConnection = function(strSessionPartnerPeerUID) {
 		connect_attempts = 0;   // Reset connection attempts because we connected successfully
-        console.assert( !(strSessionPartnerPeerUID in m_mapPeers) );
-
-        m_bIsPublisher = true;
-        if (!m_bSendAudio && !m_bSendVideo) {
-            console.error("[WEBRTC2] Publisher must send audio or video stream");
-            return;
-        }
-        navigator.mediaDevices.getUserMedia(self.getUserMediaConstraints()).then(function (objLocalStream) {
-            console.log("[WEBRTC2] Local stream successfully received");
-            var objPeer = new RTCPeerConnection(m_objRTCConfiguration);
-            objPeer.strPeerUID = strSessionPartnerPeerUID;
-            m_mapPeers[strSessionPartnerPeerUID] = objPeer;
-            objPeer.onaddstream = self.onRemoteStreamAdded; // Required when a watcher is sending a stream
-            objPeer.onicecandidate = function(event) {
-                // We have a candidate, send it to the remote party with the same uuid
-                if (event.candidate == null) {
-                    console.error("[WEBRTC2] ICE Candidate was null, done");
-                    return;
-                }
-                m_objWS.send(JSON.stringify({'to': strSessionPartnerPeerUID, 'ice': event.candidate}));
-            };
-            objPeer.onconnectionstatechange = function(event) {
-                console.error("[WEBRTC2] Connection state changed " + objPeer.connectionState);
-            };
-            console.log("[WEBRTC2] Created peer connection for publishing");
-            objPeer.addStream(objLocalStream);
-            console.log("[WEBRTC2] Local SDP set");
-            objPeer.createOffer().then(function(offer) {
-                objPeer.setLocalDescription(offer)
-                console.log("[WEBRTC2] Sending SDP offer");
-                sdp = {'to': strSessionPartnerPeerUID, 'sdp': offer}
-                m_objWS.send(JSON.stringify(sdp));
-                console.warn("[WEBRTC2] Streaming (1)");
-            }).catch(function(t){
-                console.error('[WEBRTC2] error on createOffer ', t);
-            });
-        }).catch(function(a1, a2){
-            console.error("[WEBRTC2] error on getUserMedia a1 = ", a1);
-            console.error("[WEBRTC2] error on getUserMedia a2 = ", a2);
-        });
+		console.assert( !(strSessionPartnerPeerUID in m_mapPeers) );
+		m_bIsPublisher = true;
+		if (!m_bSendAudio && !m_bSendVideo) {
+			console.error("[WEBRTC2] Publisher must send audio or video stream");
+			return;
+		}
+		navigator.mediaDevices.getUserMedia(self.getUserMediaConstraints()).then(function (objLocalStream) {
+			console.log("[WEBRTC2] Local stream successfully received");
+			var objPeer = new RTCPeerConnection(m_objRTCConfiguration);
+			objPeer.strPeerUID = strSessionPartnerPeerUID;
+			m_mapPeers[strSessionPartnerPeerUID] = objPeer;
+			objPeer.onaddstream = self.onRemoteStreamAdded; // Required when a watcher is sending a stream
+			objPeer.onicecandidate = function(event) {
+				// We have a candidate, send it to the remote party with the same uuid
+				if (event.candidate == null) {
+					console.error("[WEBRTC2] ICE Candidate was null, done");
+					return;
+				}
+				m_objWS.send(JSON.stringify({'to': strSessionPartnerPeerUID, 'ice': event.candidate}));
+			};
+			objPeer.onconnectionstatechange = function(event) {
+				console.error("[WEBRTC2] Connection state changed " + objPeer.connectionState);
+			};
+			console.log("[WEBRTC2] Created peer connection for publishing");
+			objPeer.addStream(objLocalStream);
+			console.log("[WEBRTC2] Local SDP set");
+			objPeer.createOffer().then(function(offer) {
+				objPeer.setLocalDescription(offer)
+				console.log("[WEBRTC2] Sending SDP offer");
+				sdp = {'to': strSessionPartnerPeerUID, 'sdp': offer}
+				m_objWS.send(JSON.stringify(sdp));
+				console.warn("[WEBRTC2] Streaming (1)");
+			}).catch(function(t){
+				console.error('[WEBRTC2] error on createOffer ', t);
+			});
+		}).catch(function(a1, a2){
+			console.error("[WEBRTC2] error on getUserMedia a1 = ", a1);
+			console.error("[WEBRTC2] error on getUserMedia a2 = ", a2);
+		});
 	}
 
 	// SDP received from peer, set remote description and create an answer when necessary
@@ -10516,43 +11010,41 @@ window.CloudPlayerWebRTC2 = function(objVideoEl, strConnectionUrl, arrIceServers
 
 		objSessionPartnerPeer.setRemoteDescription(sdp).then(function() {
 			console.log("[WEBRTC2] Remote SDP set");
-            if (m_bIsPublisher) {
-                console.assert(sdp.type === "answer");
-                console.log("[WEBRTC2] Got SDP answer from " + strSessionPartnerPeerUID);
-            } else {
-                console.assert(sdp.type === "offer");
-                console.log("[WEBRTC2] Got SDP offer from " + strSessionPartnerPeerUID);
-
-                // Local description was set, send it to peer
-                onLocalDescription = function(desc) {
-                    console.log("[WEBRTC2] Got local description: " + JSON.stringify(desc));
-                    objSessionPartnerPeer.setLocalDescription(desc).then(function() {
-                        console.log("[WEBRTC2] Sending SDP answer to " + strSessionPartnerPeerUID);
-                        sdp = {'to': strSessionPartnerPeerUID, 'sdp': objSessionPartnerPeer.localDescription}
-                        m_objWS.send(JSON.stringify(sdp));
-                        console.warn("[WEBRTC2] Streaming (2)");
-                        self.onStartStreaming();
-                        _checkAutoPlay(m_objVideoEl.play());
-                    });
-                }
-
-                // Are watcher going to send its streams to publisher?
-                if (m_bSendVideo || m_bSendAudio) {
-                    console.log("[WEBRTC2] Watcher is configured to send stream");
-                    navigator.mediaDevices.getUserMedia({audio: m_bSendAudio, video: m_bSendVideo}).then(function(objLocalStream) {
-                        objSessionPartnerPeer.addStream(objLocalStream);
-                        console.log("[WEBRTC2] Local SDP set, creating answer");
-                        objSessionPartnerPeer.createAnswer().then(onLocalDescription).catch(function(t){
-                            console.error('[WEBRTC2] error on createAnswer (1) ', t);
-                        });
-                    });
-                } else {
-                    console.log("[WEBRTC2] Creating answer without stream sending");
-                    objSessionPartnerPeer.createAnswer().then(onLocalDescription).catch(function(t){
-                        console.error('[WEBRTC2] error on createAnswer (2) ', t);
-                    });
-                }
-            }
+			if (m_bIsPublisher) {
+				console.assert(sdp.type === "answer");
+				console.log("[WEBRTC2] Got SDP answer from " + strSessionPartnerPeerUID);
+			} else {
+				console.assert(sdp.type === "offer");
+				console.log("[WEBRTC2] Got SDP offer from " + strSessionPartnerPeerUID);
+				// Local description was set, send it to peer
+				onLocalDescription = function(desc) {
+					console.log("[WEBRTC2] Got local description: " + JSON.stringify(desc));
+					objSessionPartnerPeer.setLocalDescription(desc).then(function() {
+						console.log("[WEBRTC2] Sending SDP answer to " + strSessionPartnerPeerUID);
+						sdp = {'to': strSessionPartnerPeerUID, 'sdp': objSessionPartnerPeer.localDescription}
+						m_objWS.send(JSON.stringify(sdp));
+						console.warn("[WEBRTC2] Streaming (2)");
+						self.onStartStreaming();
+						_checkAutoPlay(m_objVideoEl.play());
+					});
+				}
+				// Are watcher going to send its streams to publisher?
+				if (m_bSendVideo || m_bSendAudio) {
+					console.log("[WEBRTC2] Watcher is configured to send stream");
+					navigator.mediaDevices.getUserMedia({audio: m_bSendAudio, video: m_bSendVideo}).then(function(objLocalStream) {
+						objSessionPartnerPeer.addStream(objLocalStream);
+						console.log("[WEBRTC2] Local SDP set, creating answer");
+						objSessionPartnerPeer.createAnswer().then(onLocalDescription).catch(function(t){
+							console.error('[WEBRTC2] error on createAnswer (1) ', t);
+						});
+					});
+				} else {
+					console.log("[WEBRTC2] Creating answer without stream sending");
+					objSessionPartnerPeer.createAnswer().then(onLocalDescription).catch(function(t){
+						console.error('[WEBRTC2] error on createAnswer (2) ', t);
+					});
+				}
+			}
 		}).catch(function(t){
 			console.error('[WEBRTC2] error on setRemoteDescription ', t);
 		});
@@ -10568,68 +11060,67 @@ window.CloudPlayerWebRTC2 = function(objVideoEl, strConnectionUrl, arrIceServers
 	}
 
 	self.onServerMessage = function(event) {
-        console.log("[WEBRTC2] Received " + event.data);
-        if (event.data.startsWith("HELLO")) {
-            console.log("[WEBRTC2] Registered with server, waiting for stream");
-            return;
-        } else if (event.data.startsWith("SESSION_STARTED")) {
-            var strSessionPartnerPeerUID = event.data.split(" ")[1];
-            console.log("[WEBRTC2] Publisher " + strSessionPartnerPeerUID + " is going to start session");
-            self.createWatchingConnection(strSessionPartnerPeerUID);
-            return;
-        } else if (event.data.startsWith("SESSION_STOPPED")) {
-            var strSessionPartnerPeerUID = event.data.split(" ")[1];
-            console.log("[WEBRTC2] Session of publisher " + strSessionPartnerPeerUID + " is terminated");
-            if (strSessionPartnerPeerUID in m_mapPeers) {
-                if (!!m_mapPeers[strSessionPartnerPeerUID]) {
-                    m_mapPeers[strSessionPartnerPeerUID].close();
-                    m_mapPeers[strSessionPartnerPeerUID] = null;
-                }
-                delete m_mapPeers[strSessionPartnerPeerUID];
-                if (m_objVideoEl && m_strPeerOnVideoEl === strSessionPartnerPeerUID) {
-                    self.reset();
-                }
-            }
-            return;
-        } else if (event.data.startsWith("START_SESSION")) {
-            var strSessionPartnerPeerUID = event.data.split(" ")[1];
-            console.log("[WEBRTC2] Watcher " + strSessionPartnerPeerUID + " has come and awaiting for publishing");
-            self.createPublishingConnection(strSessionPartnerPeerUID);
-            return;
-        } else if (event.data.startsWith("ERROR")) {
-            self.handleIncomingError(event.data);
-            return;
-        } else {
-            // Handle incoming JSON SDP and ICE messages
-            var objMsg = null, strPeerUID = "", objPeer = null;
-            try {
-                objMsg = JSON.parse(event.data);
-                strPeerUID = objMsg.from
-                objPeer = m_mapPeers[strPeerUID]
-            } catch (e) {
-                if (e instanceof SyntaxError) {
-                    self.handleIncomingError("Error parsing incoming JSON: " + event.data);
-                } else {
-                    self.handleIncomingError("Unknown error parsing response: " + event.data);
-                }
-                return;
-            }
-
-            if (objMsg.sdp != null) {
-                self.onIncomingSDP(strPeerUID, objPeer, objMsg.sdp);
-            } else if (objMsg.ice != null) {
-                self.onIncomingICE(strPeerUID, objPeer, objMsg.ice);
-            } else {
-                self.handleIncomingError("Unknown incoming JSON: " + objMsg);
-            }
+		console.log("[WEBRTC2] Received " + event.data);
+		if (event.data.startsWith("HELLO")) {
+			console.log("[WEBRTC2] Registered with server, waiting for stream");
+			return;
+		} else if (event.data.startsWith("SESSION_STARTED")) {
+			var strSessionPartnerPeerUID = event.data.split(" ")[1];
+			console.log("[WEBRTC2] Publisher " + strSessionPartnerPeerUID + " is going to start session");
+			self.createWatchingConnection(strSessionPartnerPeerUID);
+			return;
+		} else if (event.data.startsWith("SESSION_STOPPED")) {
+			var strSessionPartnerPeerUID = event.data.split(" ")[1];
+			console.log("[WEBRTC2] Session of publisher " + strSessionPartnerPeerUID + " is terminated");
+			if (strSessionPartnerPeerUID in m_mapPeers) {
+				if (!!m_mapPeers[strSessionPartnerPeerUID]) {
+					m_mapPeers[strSessionPartnerPeerUID].close();
+					m_mapPeers[strSessionPartnerPeerUID] = null;
+				}
+				delete m_mapPeers[strSessionPartnerPeerUID];
+				if (m_objVideoEl && m_strPeerOnVideoEl === strSessionPartnerPeerUID) {
+					self.reset();
+				}
+			}
+			return;
+		} else if (event.data.startsWith("START_SESSION")) {
+			var strSessionPartnerPeerUID = event.data.split(" ")[1];
+			console.log("[WEBRTC2] Watcher " + strSessionPartnerPeerUID + " has come and awaiting for publishing");
+			self.createPublishingConnection(strSessionPartnerPeerUID);
+			return;
+		} else if (event.data.startsWith("ERROR")) {
+			self.handleIncomingError(event.data);
+			return;
+		} else {
+			// Handle incoming JSON SDP and ICE messages
+			var objMsg = null, strPeerUID = "", objPeer = null;
+			try {
+				objMsg = JSON.parse(event.data);
+				strPeerUID = objMsg.from
+				objPeer = m_mapPeers[strPeerUID]
+			} catch (e) {
+				if (e instanceof SyntaxError) {
+					self.handleIncomingError("Error parsing incoming JSON: " + event.data);
+				} else {
+					self.handleIncomingError("Unknown error parsing response: " + event.data);
+				}
+				return;
+			}
+			if (objMsg.sdp != null) {
+				self.onIncomingSDP(strPeerUID, objPeer, objMsg.sdp);
+			} else if (objMsg.ice != null) {
+				self.onIncomingICE(strPeerUID, objPeer, objMsg.ice);
+			} else {
+				self.handleIncomingError("Unknown incoming JSON: " + objMsg);
+			}
 		}
 	}
 
 	// window.onload = websocketServerConnect;
 
 	self.stopWS = function(){
-        m_objWS.close();
-        self.removeCalbacks();
+		m_objWS.close();
+		self.removeCalbacks();
 		// self.onServerClose();
 		// delete self;
 	}
@@ -10637,15 +11128,13 @@ window.CloudPlayerWebRTC2 = function(objVideoEl, strConnectionUrl, arrIceServers
 	self.onServerClose = function(event) {
 		console.error("[WEBRTC2] Closed WebRTC ", event);
 		self.reset();
-
-        for (strSessionPartnerPeerUID in m_mapPeers) {
-            if (!!m_mapPeers[strSessionPartnerPeerUID]) {
-                m_mapPeers[strSessionPartnerPeerUID].close();
-                m_mapPeers[strSessionPartnerPeerUID] = null;
-            }
-        }
-
-        m_mapPeers = {};
+		for (strSessionPartnerPeerUID in m_mapPeers) {
+			if (!!m_mapPeers[strSessionPartnerPeerUID]) {
+				m_mapPeers[strSessionPartnerPeerUID].close();
+				m_mapPeers[strSessionPartnerPeerUID] = null;
+			}
+		}
+		m_mapPeers = {};
 	}
 
 	self.onServerError = function(event) {
@@ -10659,15 +11148,13 @@ window.CloudPlayerWebRTC2 = function(objVideoEl, strConnectionUrl, arrIceServers
 	self.onRemoteStreamAdded = function(event) {
 		videoTracks = event.stream.getVideoTracks();
 		audioTracks = event.stream.getAudioTracks();
-
 		if (videoTracks.length > 0 || audioTracks.length > 0) {
 			console.log('[WEBRTC2] Incoming stream: ' + videoTracks.length + ' video tracks and ' + audioTracks.length + ' audio tracks');
 			if (m_objVideoEl && m_strPeerOnVideoEl === "") {
 			    m_objVideoEl.srcObject = event.stream;
 			    m_strPeerOnVideoEl = event.currentTarget.strPeerUID;
-            }
-        }
-        else {
+			}
+		} else {
 			self.handleIncomingError('[WEBRTC2] Stream with unknown tracks added, resetting');
 		}
 	}
@@ -10700,6 +11187,698 @@ window.CloudPlayerWebRTC2 = function(objVideoEl, strConnectionUrl, arrIceServers
 };
 
 window.CloudPlayerWebRTC2.version = "2.0.3";
+/*------SUPPORTS-----*/
+var JpegPlayerQue = function JpegPlayerQue( limitSize ){
+	this.limit = limitSize;
+	this.array = [];
+}
+
+JpegPlayerQue.prototype.isEmpty = function() {
+	return (this.array.length == 0);
+}
+
+JpegPlayerQue.prototype.push = function(dataelement) {
+	if(this.array.length < this.limit){
+		this.array.push(dataelement);
+		return this.array.length;
+	}
+	return -1;
+}
+
+JpegPlayerQue.prototype.pop = function() {
+	if(!this.isEmpty()){
+		return this.array.shift();
+	}
+	return undefined;
+}
+
+JpegPlayerQue.prototype.peek = function() {
+	if(!this.isEmpty()) {
+		return this.array[0];
+	}
+	return undefined;
+}
+
+JpegPlayerQue.prototype.clear = function() {
+	while (this.array.length > 0) {
+		this.array.pop();
+	}
+}
+
+JpegPlayerQue.prototype.size = function () {
+	return this.array.length;
+}
+
+/*-------MODEL-------*/
+var JpegPlayerModel = function JpegPlayerModel( quelimitsize ) {
+	this.quelimit = quelimitsize || 100;
+	this.queue = new JpegPlayerQue( quelimitsize );
+	this.callback_lowdata = undefined;
+	this.callback_time = undefined;
+	this.lasttime = undefined;
+	this.need_more_data = false;
+	this.data_is_over = false;
+};
+
+JpegPlayerModel.prototype.stop = function () {
+	this.data_is_over = false;
+	this.need_more_data = false;
+
+	this.queue.clear();
+	this.lasttime = undefined;
+	this.need_more_data = false;
+}
+
+JpegPlayerModel.prototype.pushImageInfo = function ( imageinfo) {
+	if (imageinfo == null) {
+		this.data_is_over = true;
+		this.need_more_data = false;
+	} else {
+		this.queue.push(imageinfo);
+		this.need_more_data = false;
+		this.data_is_over = false;
+		this.lasttime = imageinfo.utctime;
+	}
+}
+
+JpegPlayerModel.prototype.getData = function getData( updateDataCBFunc ) {
+	var data = {};
+
+	var imageInfo = this.queue.pop();
+	if ( imageInfo !== undefined ){
+		try {
+			data.url	= imageInfo.url;
+			data.width	= imageInfo.width;
+			data.height	= imageInfo.height;
+			data.time	= imageInfo.time;
+			data.utctime 	= imageInfo.utctime;
+		} catch (e) {
+			data.url = undefined;
+		}
+	} else {
+		data.url = undefined;
+	}
+
+	if (this.queue.size() < this.quelimit/4) {
+		if (this.callback_lowdata!= null && this.callback_lowdata !== undefined) {
+			if (!this.need_more_data) {
+				this.callback_lowdata(this.lasttime);
+				this.need_more_data = true;
+			}
+		}
+	}
+	if (data.utctime) {
+		if (this.callback_time != null && this.callback_time !== undefined) {
+			this.callback_time( data.utctime);
+		}
+	}
+	data.data_is_over = this.data_is_over;
+
+	updateDataCBFunc( data);
+}
+
+/*-------VIEW--------*/
+
+var JpegPlayerView = function JpegPlayerView(element, controller) {
+	this.element = element;
+	this.controller = controller;
+	this.renderPeriod = 1000;
+	this.startImageUpdateTime = -1;
+	this.updateTO = null;
+	this.isRunning = false;
+	this.lastHeight = undefined;
+	this.lastWidth = undefined;
+	this.lastRenderTime = -1;
+	this.currentImage = null;
+};
+
+JpegPlayerView.prototype.getCurrentImage = function() {
+	return this.currentImage;
+}
+
+JpegPlayerView.prototype.needToUpdateData = function(){
+	let self = this;
+
+	if(!self.isRunning){
+		return;
+	}
+
+	if (self.startImageUpdateTime > 0) {
+		var currtime = new Date().getTime();
+		var difftime = currtime - self.startImageUpdateTime;
+		if (difftime > self.renderPeriod) {
+			console.warn("Slowly imageload (more than " + self.renderPeriod +"ms): render speed is down ");
+			self.updateTO = setTimeout(function(){
+				self.controller.clModel.getData(self.controller.updateDataCB.bind(self.controller) );
+			},0);
+		} else {
+			var delta = self.renderPeriod - difftime;
+			//console.log("Get new data in " + delta  + " ms");
+			self.updateTO = setTimeout(function(){
+				self.controller.clModel.getData(self.controller.updateDataCB.bind(self.controller) );
+			}, delta );
+		}
+	} else {
+		console.warn('No image, try again');
+		self.updateTO = setTimeout(function(){
+			self.controller.clModel.getData(self.controller.updateDataCB.bind(self.controller) );
+		}, self.renderPeriod);
+	}
+}
+
+JpegPlayerView.prototype.initDraw = function initDraw(controller, cameraName, meta) {
+
+	this.element.innerHTML =
+	 '<div class= "JpegPlayerContainer" style="width:100%;height:100%;">'
+	+'	<div class="JpegPlayerImages" style="position:relative;z-index:-1;width: 100%;height:100%;">'
+	+'		<iframe class="JpegPlayerResizeCatcher" style="position:relative;z-index:-10; width:100%; height:100%; border:none;"></iframe>'
+	+'		<img class="JpegPlayerImg0" style="position: absolute; display:none;"></img>'
+	+'		<img class="JpegPlayerImg1" style="position: absolute;"></img>'
+	+'	</div>'
+	+'</div>';
+
+	this.container = this.element.getElementsByClassName('JpegPlayerContainer')[0];
+	this.images	= this.element.getElementsByClassName('JpegPlayerImages')[0];
+	this.inv_img  = this.element.getElementsByClassName('JpegPlayerImg0')[0];
+	this.vis_img  = this.element.getElementsByClassName('JpegPlayerImg1')[0];
+	this.resizeCatcher = this.element.getElementsByClassName('JpegPlayerResizeCatcher')[0].contentWindow;
+	this.curimg = 0;
+	let self = this;
+
+	this.resizeCatcher.addEventListener( "resize", function(event){
+		var w = self.lastWidth || undefined;
+		var h = self.lastHeight || undefined;
+		self.fitToContainer( w, h );
+	});
+
+	this.inv_img.addEventListener("load", function(){
+		self.currentImage = self.inv_img.src;
+		self.vis_img.src = self.inv_img.src;
+		self.vis_img.style.display = "";
+		self.needToUpdateData();
+	});
+}
+
+JpegPlayerView.prototype.fitToContainer = function fitToContainer( imgw, imgh){
+	if (imgw === undefined && imgh === undefined){
+//		this.inv_img.style.width = '100%';
+//		this.inv_img.style.height= '100%';
+//		this.vis_img.style.width = '100%';
+//		this.vis_img.style.height= '100%';
+	} else {
+		var divh = this.images.clientHeight;
+		var divw = this.images.clientWidth;
+
+		var dar = divw/divh;
+		var par = imgw/imgh;
+
+		if (dar > par) {
+			this.inv_img.style.height= '100%';
+			this.vis_img.style.height= '100%';
+			this.inv_img.style.width =  divh*par +'px';
+			this.vis_img.style.width =  divh*par +'px';
+			this.inv_img.style.right =  (divw - divh*par)/2 +'px';
+			this.vis_img.style.right =  (divw - divh*par)/2 +'px';
+			this.inv_img.style.top =  0;
+			this.vis_img.style.top =  0;
+		} else {
+			this.inv_img.style.width= '100%';
+			this.vis_img.style.width= '100%';
+			this.inv_img.style.height =  divw/par +'px';
+			this.vis_img.style.height =  divw/par +'px';
+			this.inv_img.style.top =  (divh - divw/par)/2 +'px';
+			this.vis_img.style.top =  (divh - divw/par)/2 +'px';
+			this.inv_img.style.right =  0;
+			this.vis_img.style.right =  0;
+		}
+	}
+}
+
+JpegPlayerView.prototype.render = function render(JpegPlayerdata) {
+	var self = this;
+	if (self.updateTO){
+		clearTimeout(self.updateTO);
+		self.updateTO = null;
+	}
+	if (JpegPlayerdata.url !== undefined) {
+		self.startImageUpdateTime = new Date().getTime();
+		self.lastRenderTime	= JpegPlayerdata.utctime;
+		self.inv_img.src	= JpegPlayerdata.url;
+	} else {
+		self.startImageUpdateTime = -1;
+		if (self.vis_img.src === ""){
+			self.vis_img.style.display = "none";
+		}
+		if(!JpegPlayerdata.data_is_over) {
+			self.needToUpdateData();
+		} else {
+			console.warn('[jpegplayer] data is over');
+		}
+	}
+
+	var w = JpegPlayerdata.width || self.lastWidth || undefined;
+	var h = JpegPlayerdata.height || self.lastHeight || undefined;
+
+	self.lastHeight = h;
+	self.lastWidth = w;
+
+	self.fitToContainer( w, h );
+}
+
+JpegPlayerView.prototype.start = function(){
+	if (this.updateTO){
+		clearTimeout(this.updateTO);
+		this.updateTO = null;
+	}
+	this.lastRenderTime = -1;
+	this.isRunning = true;
+}
+
+JpegPlayerView.prototype.stop = function(){
+	if (this.updateTO){
+		clearTimeout(this.updateTO);
+		this.updateTO = null;
+	}
+	this.lastRenderTime = -1;
+	this.isRunning = false;
+}
+
+/*------CONTROLLER--*/
+///init component func
+///element - <div>-element to which VXGChart vill be connected
+var JpegPlayerController = function JpegPlayerController(element, quesize ) {
+	if (element === undefined) {
+		return;
+	}
+	var qs = quesize || 100;
+
+	this.clModel	= new JpegPlayerModel( qs );
+	this.clView		= new JpegPlayerView (element, this);
+
+	this.clView.element.run = this.run.bind(this);
+	this.clView.element.stop = this.stop.bind(this);
+
+	this.clView.element.getShot = this.getShot.bind(this);
+	this.clView.element.pushImageInfo = this.pushImageInfo.bind(this);
+	this.clView.element.setLowDataCB = this.setLowDataCB.bind(this);
+	this.clView.element.setTimeCB    = this.setTimeCB.bind(this);
+
+	this.clView.initDraw(this);
+};
+
+JpegPlayerController.prototype.pushImageInfo = function pushImageInfo( obj ) {
+	this.clModel.pushImageInfo(obj);
+}
+
+JpegPlayerController.prototype.setLowDataCB = function ( func  ) {
+	this.clModel.callback_lowdata = func.bind();
+}
+
+JpegPlayerController.prototype.setTimeCB = function ( func  ) {
+	this.clModel.callback_time = func.bind();
+}
+
+JpegPlayerController.prototype.getShot = function () {
+	let self = this;
+
+	return self.clView.getCurrentImage();
+}
+
+JpegPlayerController.prototype.run = function run ( timeout , position ) {
+	let self = this;
+
+	if(self.clView.isRunning){
+		return;
+	}
+
+	self.clView.renderPeriod = timeout || 1000;
+
+	self.clView.start();
+	self.clModel.lasttime = position || undefined;
+	self.clModel.getData(self.updateDataCB.bind(self));
+}
+
+JpegPlayerController.prototype.stop = function stop() {
+	let self = this;
+
+	self.clView.stop();
+	self.clModel.stop();
+	console.log('stop');
+}
+
+///showCameraList - connect function beetwen chartModel and chartView
+JpegPlayerController.prototype.updateDataCB = function updateCameraList(JpegPlayerdata) {
+	this.clView.render(JpegPlayerdata);
+};
+
+window.CloudPlayerJpegLive = function(element, api, camera) {
+	var mVideoEl = element;
+	var self = this;
+	var mController = null;
+	var _TAG = "[JpegLive]";
+	var mApi = api;
+	var mCamera = camera;
+	var mPreviewPeriod = 1000;//msec
+	var mRedrawPeriod  = 1000;//msec
+	var mPreviewTo = null;
+	var mCurrtime = 0;
+	var mPicTime = 0;
+	var mUpdateTime = 0;
+	var mForcedUpdatePeriod = -1;
+
+	self.getcurrtime = function() {
+		return mCurrtime;
+	}
+
+	self.updateList = function ( lasttime ) {
+		mCurrtime += mPreviewPeriod;
+		if ( mCamera !== undefined && mApi !== undefined){
+			mApi.cameraPreview( mCamera.getID()).done( function( answer ){
+				//console.warn(_TAG, answer);
+				if (answer.url) {
+					var obj = {};
+					obj.url = answer.url;
+					obj.width = answer.width;
+					obj.height = answer.height;
+					obj.time = answer.time;
+					obj.utctime = CloudHelpers.parseUTCTime(obj.time);
+
+					var isAmz = obj.url.indexOf('X-Amz-Algorithm');
+//remove: cause bosch backend decline links with timestamp insertion
+					if (isAmz < 0) {
+						if (String(obj.url).indexOf('?') > 0) {
+							obj.url = obj.url+'&'+obj.utctime;
+						} else {
+							obj.url = obj.url+'?'+obj.utctime;
+						}
+					}
+
+					mVideoEl.pushImageInfo(obj);
+				}
+				var time = obj.utctime;
+				var curtime = new Date().getTime();
+
+				if (((mPicTime >= 0) && (mPicTime != time))
+				|| ( (mForcedUpdatePeriod > 0) && ((curtime - mUpdateTime) > mForcedUpdatePeriod) ) //clo-888 workaround
+				) {
+					mUpdateTime = curtime;
+					mApi.cameraUpdatePreview(mCamera.getID()
+					).done(function(answer_upd){
+						//console.log(_TAG, answer_upd);
+						mPicTime = time;
+					}).fail( function(err_upd){
+						console.error(_TAG, err_upd);
+						mPicTime = 0;
+					});
+					mPicTime = -1;
+				}
+			}).fail(function(err){
+				console.error(_TAG, err);
+			});
+		}
+	}
+	self.play = function( api, camera, redrawPeriod ) {
+		mPicTime = 0;
+		mCurrtime = 0;
+
+		if (redrawPeriod !== undefined) {
+			mRedrawPeriod = redrawPeriod;
+		}
+		if ( api !== undefined) {
+			mApi = api;
+		}
+		if (camera !== undefined) {
+			mCamera = camera;
+		}
+		if (mController === undefined || mController == null){
+			mController = new JpegPlayerController(mVideoEl);
+			mVideoEl.setLowDataCB( self.updateList );
+		}
+		mVideoEl.run (mRedrawPeriod);
+	}
+
+	self.pause = function() {
+		mPicTime = '';
+		mVideoEl.stop();
+	}
+
+	self.stop = function() {
+		mPicTime = 0;
+		mCurrtime = 0;
+		clearTimeout(mPreviewTo);
+		mPreviewTo = null;
+
+		if (mController) {
+			mVideoEl.stop();
+		}
+
+		if (mVideoEl.children.length > 0) {
+			mVideoEl.removeChild(mVideoEl.children[0]);
+		}
+		mController = null;
+	}
+
+	self.reset = function() {
+		console.warn(_TAG, "reset");
+		self.stop();
+	}
+
+	self.setForcedUpdatePeriod = function( period ) {
+		mForcedUpdatePeriod = period || -1;
+	}
+
+	mVideoEl.addEventListener("abort", function() {
+		console.warn(_TAG, "abort");
+	}, true);
+	mVideoEl.addEventListener("canplay", function() {
+		console.warn( _TAG, "canplay");
+	}, true);
+	mVideoEl.addEventListener("canplaythrough", function() {
+		console.warn(_TAG, "canplaythrough");
+	}, true);
+	mVideoEl.addEventListener("durationchange", function() {
+		console.warn(_TAG, "durationchange");
+	}, true);
+	mVideoEl.addEventListener("emptied", function() {
+		console.warn(_TAG, "emptied");
+	}, true);
+	mVideoEl.addEventListener("encrypted", function() {
+		console.warn(_TAG, "encrypted");
+	}, true);
+	mVideoEl.addEventListener("ended", function() {
+		console.warn(_TAG, "ended");
+	}, true);
+	mVideoEl.addEventListener("error", function(err, err1) {
+		console.error(_TAG, "error ", err);
+		console.error(_TAG, "error ", err1);
+	}, true);
+	mVideoEl.addEventListener("interruptbegin", function() {
+		console.warn(_TAG, "interruptbegin");
+	}, true);
+	mVideoEl.addEventListener("interruptend", function() {
+		console.warn(_TAG, "interruptend");
+	}, true);
+	mVideoEl.addEventListener("loadeddata", function() {
+		console.warn(_TAG, "loadeddata");
+		mVideoEl.play();
+	}, true);
+	mVideoEl.addEventListener("loadedmetadata", function() {
+		console.warn(_TAG, "loadedmetadata");
+	}, true);
+	mVideoEl.addEventListener("loadstart", function() {
+		console.warn(_TAG, "loadstart");
+	}, true);
+	mVideoEl.addEventListener("mozaudioavailable", function() {
+		console.warn(_TAG, "mozaudioavailable");
+	}, true);
+	mVideoEl.addEventListener("pause", function() {
+		console.warn(_TAG, "pause");
+	}, true);
+	mVideoEl.addEventListener("play", function() {
+		console.warn(_TAG, "play");
+	}, true);
+	mVideoEl.addEventListener("playing", function() {
+		console.warn(_TAG, "playing");
+	}, true);
+	mVideoEl.addEventListener("progress", function() {
+		console.warn(_TAG, "progress");
+	}, true);
+	mVideoEl.addEventListener("ratechange", function() {
+		console.warn(_TAG, "ratechange");
+	}, true);
+	mVideoEl.addEventListener("seeked", function() {
+		console.warn(_TAG, "seeked");
+	}, true);
+	mVideoEl.addEventListener("seeking", function() {
+		console.warn(_TAG, "seeking");
+	}, true);
+	mVideoEl.addEventListener("stalled", function() {
+		console.warn(_TAG, "stalled");
+	}, true);
+	mVideoEl.addEventListener("suspend", function() {
+		console.warn(_TAG, "suspend");
+	}, true);
+	mVideoEl.addEventListener("timeupdate", function() {
+		console.warn(_TAG, "timeupdate");
+	}, true);
+	mVideoEl.addEventListener("volumechange", function() {
+		console.warn(_TAG, "volumechange");
+	}, true);
+	mVideoEl.addEventListener("waiting", function() {
+		console.warn(_TAG, "waiting");
+	}, true);
+
+};
+
+window.CloudPlayerJpegTimelapse = function (element, api ) {
+	var mVideoEl = element;
+	var self = this;
+	var mController = undefined;
+	var _TAG = "[JpegTimelapse]";
+	var mApi = api;
+	var mRedrawPeriod  = 1000;//msec
+	var mCurrtime = -1;
+	var direction = "-time";
+	var timeUpdateCallback = null;
+
+	function updateTime (time) {
+		mCurrtime = time;
+		if (timeUpdateCallback) {
+			timeUpdateCallback(time);
+		}
+	}
+
+	function updateImages ( time ) {
+		var utctime = "";
+		if (time === undefined) {
+			var now = new Date();
+			var time = now.getTime();
+			utctime = CloudHelpers.formatUTCTime(time);
+		} else {
+			utctime = CloudHelpers.formatUTCTime(time);
+		}
+
+		var obj = {};
+		obj.order_by = direction;
+		obj.limit = 75;
+		if (direction === "-time"){
+			obj.end = utctime;
+		} else {
+			obj.start = utctime;
+		}
+		obj.origin = "recording_thumbnail";
+
+		if ( mApi) {
+			mApi.cameraImages(obj).done(function( data) {
+				console.log('done');
+				if (mVideoEl) {
+					if (data.objects.length > 0) {
+						for( var i=0; i < data.objects.length; i++) {
+							var imageInfo = data.objects[i];
+							imageInfo.utctime = CloudHelpers.parseUTCTime(imageInfo.time);
+							mVideoEl.pushImageInfo( imageInfo );
+						}
+					} else {
+						mVideoEl.pushImageInfo( null );
+					}
+				}
+			}).fail(function(err){
+				console.log('err');
+			});
+		}
+	}
+
+	function restoreDefaults() {
+		mCurrtime = -1;
+		dirrection = "-time";
+	}
+
+	self.getcurrtime = function() {
+		return mCurrtime;
+	}
+
+	self.play = function( redrawPeriod = 1000, start_position) {
+		mRedrawPeriod = redrawPeriod;
+		
+		restoreDefaults();
+		
+		if ( api !== undefined) {
+			mApi = api;
+		}
+		if (mController === undefined || mController == null){
+			mController = new JpegPlayerController(mVideoEl);
+			mVideoEl.setLowDataCB( updateImages );
+			mVideoEl.setTimeCB( updateTime );
+		}
+		
+		self.rewind(start_position);
+	}
+
+	self.setApi = function ( cloudapi ) {
+		mApi = cloudapi;
+	}
+
+	self.pause = function() {
+		mVideoEl.stop();
+	}
+	
+	self.rewind = function(start_position) {
+		if (!mApi || mApi === undefined) {
+		    return;
+		}
+	
+		direction = "-time";
+		var position = undefined;
+		if (start_position !== undefined){
+			position = start_position;
+		} else if (mCurrtime > 0) {
+			position = mCurrtime;
+		}
+		mVideoEl.stop();
+		mVideoEl.run (mRedrawPeriod, position);
+	}
+	
+	self.fastforward = function(start_position) {
+		if (!mApi || mApi === undefined) {
+		    return;
+		}
+
+		direction = "time";
+
+		var position = undefined;
+		if (start_position !== undefined){
+			position = start_position;
+		} else	if (mCurrtime > 0) {
+			position = mCurrtime;
+		}
+		mVideoEl.stop();
+		mVideoEl.run (mRedrawPeriod, position);
+	}
+
+	self.stop = function() {
+		restoreDefaults();
+		
+		if (mController) {
+			mVideoEl.stop();
+		}
+		if (mVideoEl.children.length > 0) {
+			mVideoEl.removeChild(mVideoEl.children[0]);
+		}
+		mController = null;
+	}
+
+	self.reset = function() {
+		console.warn(_TAG, "reset");
+		self.stop();
+	}
+	    
+	self.setTimeUpdateCallback = function ( func ) {
+		timeUpdateCallback = func;
+	}
+};
+
+
+
 window.CloudCameraTimelineMode = {};
 
 CloudCameraTimelineMode.MINUTES_MODE = {
@@ -10842,7 +12021,7 @@ window.CloudCameraTimelineView = function(viewid, options, parent){
 	var mRightArrow = timeline_target.getElementsByClassName('cloudcameratimeline-right')[0];
 	var mShiftMinus = timeline_target.getElementsByClassName('shift-minus')[0];
 	var mShiftPlus = timeline_target.getElementsByClassName('shift-plus')[0];
-	
+
 	el_calendar_container.appendChild(mElementCalendar);
 	el_live_container.appendChild(mElementGotoLive);
 
@@ -10854,7 +12033,6 @@ window.CloudCameraTimelineView = function(viewid, options, parent){
 	    el_timeline_container.appendChild(timeline_target);
 	    timeline_range_or_not = el_timeline_container;	    
 	}
-
 
 	/*
 	self.elem = document.getElementById(viewid);
@@ -10978,13 +12156,13 @@ window.CloudCameraTimelineView = function(viewid, options, parent){
 
 	function _gotoLive(e){
 		if(mPlayer != null && mPlayer.getSource() != null){
-			var sClasses = mElementGotoLive.classList.value;
-			if(sClasses.indexOf('now') == -1 && sClasses.indexOf('disabled') == -1){
+			var sClasses = mElementGotoLive.classList;
+			if(sClasses.contains('now') == false && sClasses.contains('disabled') == false){
 				mPlayer.setPosition(CloudPlayer.POSITION_LIVE);
 				mPlayer.play(e);
 				self.moveToPosition(CloudHelpers.getCurrentTimeUTC());
 			}
-			if(sClasses.indexOf('now') != -1){
+			if(sClasses.contains('now') != false){
 				self.moveToPosition(CloudHelpers.getCurrentTimeUTC());
 			}
 		}
@@ -11022,7 +12200,8 @@ window.CloudCameraTimelineView = function(viewid, options, parent){
 			}
 			mConn._getAPI().storageRecordsFirst(camid, startDT, 50).done(function(r){
 				var bNeedExecuteCallback = false;
-				for (var i in r.objects) {
+				//for (var i in r.objects) {
+				for(var i = 0; i < r.objects.length; i++){
 					var record = r.objects[i];
 					var startUTCTime = CloudHelpers.parseUTCTime(record.start);
 					var endUTCTime = CloudHelpers.parseUTCTime(record.end);
@@ -11035,7 +12214,8 @@ window.CloudCameraTimelineView = function(viewid, options, parent){
 					var nUpdated = 0;
 					var maxVal = 0;
 					var minVal = 0;
-					for(var pr in mCacheRecords[nsta].data){
+					//for(var pr in mCacheRecords[nsta].data){
+					for(var pr = 0; pr < mCacheRecords[nsta].data.length; pr++){
 						var period = mCacheRecords[nsta].data[pr];
 						if (period.end > maxVal) {
 							maxVal = period.end;
@@ -11079,6 +12259,7 @@ window.CloudCameraTimelineView = function(viewid, options, parent){
 
 	function _stopPolingData(){
 		clearInterval(mIntervalPolingData);
+		mIntervalPolingData = null;
 	}
 	
 	function _startPolingData(){
@@ -11452,6 +12633,14 @@ window.CloudCameraTimelineView = function(viewid, options, parent){
 			_updateCursorPosition({sender: "pos jumped"});
 			self.moveToPosition(args.new_pos);
 			
+		} else if (evnt.name == 'STOPED' ){
+			//console.log("Timeline catch event: Player stoped " + args );
+			_stopPolingData();
+		} else if (evnt.name == 'PLAYED') {
+			console.log("Timeline catch event: Player played " + args);
+			if (!mIntervalPolingData){
+				_startPolingData();
+			}
 		}
 	}
 
@@ -12047,7 +13236,7 @@ window.CloudCameraTimelineView = function(viewid, options, parent){
             window.removeEventListener("resize", self.onTimeLineResize);
 	    if(self.elem && (self.elem.tagName === 'DIV')) {
 		while (self.elem.firstChild) {
-		    self.elem.firstChild.remove();
+			self.elem.removeChild(self.elem.firstChild);
 		}
 	    }
 	    clearInterval(mIntervalPolingData);
@@ -12645,8 +13834,8 @@ window.CloudSessionTimeline = function(viewid){
 window.CloudSDK = window.CloudSDK || {};
 
 // Automaticlly generated
-CloudSDK.version = '3.1.7';
-CloudSDK.datebuild = '210302';
+CloudSDK.version = '3.1.9';
+CloudSDK.datebuild = '211206';
 console.log('CloudSDK.version='+CloudSDK.version + '_' + CloudSDK.datebuild);
 
 // Wrapper for VXGCloudPlayer & CloudSDK
@@ -12838,6 +14027,10 @@ window.CloudPlayerSDK = function(playerElementID, o) {
 			delete window['_CloudPlayerSDK'][playerElementID];
 		}
     };
+    
+    self.sendBackwardAudio = function() {
+	return self.player.sendBackwardAudio();
+    }
 
     self.destroy = function(){
         self.player.stop("by_plrsdk_2");
@@ -12859,6 +14052,7 @@ window.CloudPlayerSDK = function(playerElementID, o) {
     };
 
     self.setPosition = function(time){
+	time = Number(time);
         mPosition = time;
         if (!self.camera) {
             return CloudReturnCode.ERROR_SOURCE_NOT_CONFIGURED;
@@ -12866,7 +14060,13 @@ window.CloudPlayerSDK = function(playerElementID, o) {
         self.player.stop("by_plrsdk_2");
         self.player.setPosition(time);
         if (self.timeline) {
-    	    self.timeline.moveToPosition(parseInt(time));
+	    var timelinepos = 0;
+	    if (time > 0){
+		timelinepos = time;
+	    } else {
+		timelinepos = CloudHelpers.getCurrentTimeUTC();
+	    }
+	    self.timeline.moveToPosition(timelinepos);
         }
         self.player.play();
     };
@@ -12889,6 +14089,18 @@ window.CloudPlayerSDK = function(playerElementID, o) {
         document.getElementById(self.options.timeline).style.display = show ? 'block' : 'hide';
         return true;
     };
+    
+    self.showCalendarControl = function(show){
+	if(!self.timeline){
+		console.error(CloudReturnCode.ERROR_NOT_CONFIGURED.text);
+		return null;
+	}
+	if (show) {
+		self.timeline.showCalendarButton();
+	} else {
+		self.timeline.hideCalendarButton();
+	}
+    }
     
     self.getChannelName = function () {
         if (!self.camera)
@@ -12916,6 +14128,12 @@ window.CloudPlayerSDK = function(playerElementID, o) {
 	}
     }
     
+    self.showPTZControl = function(isShow) {
+	if (self.player) {
+		self.player.showPTZControl(isShow);
+	}
+    }
+    
     self.mOnError_callback = null;
     self.onError = function(callback) {
         if (!callback) {
@@ -12939,6 +14157,10 @@ window.CloudPlayerSDK = function(playerElementID, o) {
             self.mOnChannelStatus_callback(self, status);
         });
     }
+
+    self.setIOsFullscreenCallback = function (func) {
+	self.player.setIOsFullscreenCallback(func)
+    }
     
     self.addCallback = function(uniqname, func) {
         self.player.addCallback(uniqname, func);
@@ -12952,6 +14174,10 @@ window.CloudPlayerSDK = function(playerElementID, o) {
         if (self.timeline) {
             self.timeline.removeCallback(uniqname, func);
         }
+    }
+    
+    self.getImages = function() {
+	self.player.getImages();
     }
 };
 
@@ -13182,34 +14408,25 @@ StreamerSWF.private.detectPrivateMode(
 // В канвасе будет воспроизводиться первый video, который не спрятан
 
 var ptzconfig = {
-    xRot : -48.6, // Поворот камеры по вертикали
-    zRot : 145, // Поворот камеры по вертикальной оси
-    xScale : 1, // Масштаб текстуры по Х
-    yScale : 1, // Масштаб текстуры по Y
-    xShift : 0, // Смещение текстуры по X
-    yShift : 0, // Смещение текстуры по Y
-    zCamShift : .2, // Смещение камеры по Z
-    zZoom : -.6, // Приближение/удаление камеры
-    xLens : 1, // Коэффициент коррекции линзы по X
-    zLens : 1.0, // Коэффициент коррекции выпуклости линзы
-    divider: 4, // Количество линий, из которых будет состоять круги у сферы. Экспоненциально влияет на количество треугольников
-    src: document.currentScript.src.replace(/(\/[^\/]+)$/,'\/')
+    xRot : -48.6, // Rotate the camera vertically
+    zRot : 145, // Camera rotation along the vertical axis
+    xScale : 1, // Texture scale in X
+    yScale : 1, // Texture scale in Y
+    xShift : 0, // Texture X offset
+    yShift : 0, // Texture Y offset
+    zCamShift : .2, // Camera Z offset
+    zZoom : -.6, // Zoom in / out camera
+    xLens : 1, // Lens Correction Factor X
+    zLens : 1.0, // Convexity Correction Factor
+    divider: 4 // The number of lines that will make up the circles around the sphere. Exponentially affects the number of triangles
 }
-/*
-var ptzconfig = {
-    xRot : -65, // Поворот камеры по вертикали
-    zRot : 145, // Поворот камеры по вертикальной оси
-    xScale : 1.01, // Масштаб текстуры по Х
-    yScale : 1.01, // Масштаб текстуры по Y
-    xShift : -0.01, // Смещение текстуры по X
-    yShift : 0.02, // Смещение текстуры по Y
-    zCamShift : .23, // Смещение камеры по Z
-    zZoom : -.6, // Приближение/удаление камеры
-    xLens : 1, // Коэффициент коррекции линзы по X
-    zLens : 1.0, // Коэффициент коррекции выпуклости линзы
-    divider: 64 // Количество линий, из которых будет состоять круги у сферы. Экспоненциально влияет на количество треугольников
-}
-*/
+
+var jsscript = document.getElementsByTagName("script"); 
+for (var i = 0; i < jsscript.length; i++) { 
+      var pattern = /CloudSDK/i; 
+      if ( pattern.test( jsscript[i].getAttribute("src") ) )
+         ptzconfig.src = jsscript[i].getAttribute("src").replace(/(\/[^\/]+)$/,'\/'); 
+ }
 
 function changepztconfig(v,c){
 ptzconfig[c]=v;
@@ -13256,7 +14473,7 @@ window.CloudPano = function(video_container, cloudplayer){
                 return;
             if(xhr.readyState == 4)
             {
-                if(xhr.status == 200){
+                if((xhr.status == 200 || xhr.status == 0) && xhr.response){
                     self.model = JSON.parse(xhr.response);
                     self.model.indices=[];c=0;
                     for (i=0;i<self.model.vertex.length;i+=3){
@@ -13280,8 +14497,11 @@ window.CloudPano = function(video_container, cloudplayer){
                 }
             }
         };
-    
-        xhr.open('GET', ptzconfig.src+'model.json', true);
+
+        if (this.player.options && this.player.options.model3d)
+            xhr.open('GET', this.player.options.model3d, true);
+        else
+            xhr.open('GET', ptzconfig.src+'model.json', true);
         xhr.send(null);
         // return xhr;
     }
