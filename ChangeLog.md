@@ -1,5 +1,129 @@
 # Web SDK for VXG Cloud & Server
 
+### Web SDK for VXG Cloud & Server 3.3.33
+- Changed the sample for the multi player
+
+
+### Web SDK for VXG Cloud & Server 3.3.32
+- Changed the version vxg-cloud-player on 1.1.2.7
+
+### Web SDK for VXG Cloud & Server 3.3.31
+- Added a new function getSnapshot  
+
+
+### Web SDK for VXG Cloud & Server 3.3.30
+- Added new options to control buttons:  Play/Pause and Full Screen.  
+- Changed the version vxg-cloud-player on 1.1.2.6
+
+
+### Web SDK for VXG Cloud & Server 3.3.29
+- Improoved the loader logic
+- Changed the version vxg-cloud-player on 1.1.2.5
+
+### Web SDK for VXG Cloud & Server 3.3.28
+- Added a new mode, "live_only", which reduces the number of requests to the server.
+- Changed the logic so that all requests are now handled within "Play".
+- Improved the loader timing.
+- Optimized the startup process for live video.
+
+
+### Web SDK for VXG Cloud & Server 3.3.27
+- Optimized the size of the calendar and PTZ preset dialogs.
+- Fixed WebSocket Secure (WSS) for LocalPlayer when HTTPS is used.
+- Updated the version of video.js from 8.17 to 8.21.
+
+
+### Web SDK for VXG Cloud & Server 3.3.25
+- Add stream timeout after 1 hour
+- New  Media player functionalities - datetime control in the player
+
+### Web SDK for VXG Cloud & Server 3.3.24
+- Add presets functionality in the cloud web sdk player
+
+### Web SDK for VXG Cloud & Server 3.3.23
+- Changed the version of cloud-player to 1.1.2.2.
+
+### Web SDK for VXG Cloud & Server 3.3.22
+- Changed the version of cloud-player to 1.1.2.1.
+
+
+### Web SDK for VXG Cloud & Server 3.3.21
+- Added the support H.265
+- Added the dash.js for playback low latency 
+- Changed the version of video.js on the latest on 8.17.2
+- Fixed the issue  the calendar and live buttons are not clickable.
+
+
+### Web SDK for VXG Cloud & Server 3.3.20
+- Added support of local player using WebSocket
+
+
+### Web SDK for VXG Cloud & Server 3.3.19
+-  Fixed : Zooming for Bosch camera does not work with direct connection
+-  Fixed : Onvif Camera shows PTZ button (but is not PTZ camera)
+-  Fixed : PTZ button disappears after pausing
+-  Fixed : watchdog is started if the local player is pausing
+
+
+### Web SDK for VXG Cloud & Server 3.3.18
+- Changed profile switching from Quality setting to Stream setting, only allowing user to choose between main (rec) and live
+- Changed default stream for live viewing to rec
+
+### Web SDK for VXG Cloud & Server 3.3.17
+- Fixed backward audio for Bosch camera with f/w v.7.86 
+
+### Web SDK for VXG Cloud & Server 3.3.15_230628
+- UI Scaling issues
+
+### Web SDK for VXG Cloud & Server 3.3.14_230524
+- Fixed for CORS error
+- Fixed pause issue on set source for tokens with only one video stream
+- Fixed jpeg format option, showing in format list now
+
+### Web SDK for VXG Cloud & Server 3.3.13_230516
+- Moment and moment-timezone packages unbundled from sdk
+
+### Web SDK for VXG Cloud & Server 3.3.12_230515
+- Multi channel playback scrubbing pause/play working
+
+### Web SDK for VXG Cloud & Server 3.3.11_230227
+- Multi stream switching between low and high quality resolutions
+
+### Web SDK for VXG Cloud & Server 3.3.10_080519
+-   Updated moment-timezone package to with-data-1970-2030
+
+### Web SDK for VXG Cloud & Server 3.3.9_230419
+-   Gave SD card it's own example page and disabled it by default
+
+### Web SDK for VXG Cloud & Server 3.3.8_230418
+-   Detecting if SD card is enabled through camera type
+
+### Web SDK for VXG Cloud & Server 3.3.7_230411
+-   Added logic to skip cloud record create where there's no sd card data in manual backup
+
+### Web SDK for VXG Cloud & Server 3.3.6_230404
+-   Added manual synchronization call for SD card backup in the UI
+
+### Web SDK for VXG Cloud & Server 3.3.5_230320
+-   Removing button disabling until more time can be spent making it work with the correct logic
+
+### Web SDK for VXG Cloud & Server 3.3.4_230227
+- Added workaround to the cloud-player for SD recording
+
+### Web SDK for VXG Cloud & Server 3.3.3_230224
+-  Fixed labeling of multiplayer timeline in cloud player, fixing bug where white timeline shows when camera is offline
+-  Disabled all camera controls when a camera source is offline
+-  Fixed bug on multiplayer when main camera isn't in the first available player
+
+### Web SDK for VXG Cloud & Server 3.3.2_230201
+-   Added joined timeline for multiplayer view
+
+### Web SDK for VXG Cloud & Server 3.3.1_230117
+-   Restarting use of the changelog
+
+### Web SDK for VXG Cloud & Server 3.1.10_211202
+-   Record player changed from custom to vxgcloudplayer
+
 ### Web SDK for VXG Cloud & Server 3.1.9_210625
 -   Fix errors of JPEG-mode
 -   Implemented Timelapse-mode, but disabled for the moment

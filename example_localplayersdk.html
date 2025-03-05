@@ -1,0 +1,192 @@
+<html>
+	<head>
+		<title>VXGCloudSDK-Web 3.3.33</title>
+		<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		<meta http-equiv="x-ua-compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+		<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+		<link rel="stylesheet" id="font-style-css" href="https://fonts.googleapis.com/css?family=Montserrat%3A400%2C700&amp;ver=4.7.6" type="text/css" media="all">
+		<link rel="stylesheet" type="text/css" href="css/index.css">
+
+		<script type="text/javascript" src="js/jquery-3.1.0.min.js"></script>
+		<script type="text/javascript" src="js/popper.min.js"></script>
+		<script type="text/javascript" src="js/bootstrap.min.js"></script>
+
+		
+    <!-- automaticly include: begin -->
+    <link rel="stylesheet" type="text/css" href="vxgwebsdk/range-slider.min.css">
+    <link rel="stylesheet" type="text/css" href="vxgwebsdk/video-js.min.css">
+    <link rel="stylesheet" type="text/css" href="vxgwebsdk/CloudSDK.min.css">
+    <script type="text/javascript" src="vxgwebsdk/x2js.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/gl-matrix-min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/range-slider.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/moment.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/moment-timezone-with-data-1970-2030.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/vxg_cloud_player.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/video.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/webrtc-adapter-latest.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/CloudSDK.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/LocalPlayer.js"></script>
+    <!-- automaticly include: end -->
+
+
+		<script>
+			window.sessNameCh = 'example_lacalplayer_ch';
+			const t_2000 = new Date("2000-01-01T00:00:00")
+			const now = new Date()  
+			const sec_since_2000 = Math.round(now.getTime()/1000 - t_2000.getTime()/1000) + (t_2000.getTimezoneOffset() - now.getTimezoneOffset())*60;
+
+
+			$(document).ready(function () {
+				try {  var sChannel = window.sessionStorage.getItem(window.sessNameCh);
+					$('#channel').val(sChannel !== null ? sChannel : ''); } catch (e) {}
+
+				function msl_loaded_callback() {
+					$('#setsource_channel')[0].disabled = false;
+					$('#stop_channel')[0].disabled = false;
+				}
+
+				function import_func() {
+					return import('./vxgwebsdk/media-stream-library.module.dev.js');
+				}
+
+				window.player = new CloudPlayerSDK('player1', {
+					autohide: 3000,
+					timeline: true,
+					calendar: true,
+					disableZoomControl: false,
+					disableAudioControl: false, //disable both mic and speaker
+					disableMicControl: false, //disable only mic-control
+					disableSpeakerControl: false, //disable only-speaker control
+					disableGetShot: false,
+					disableGetClip: false,
+					disablePTZ: true,
+					importfunc_mediastreamlibrary: import_func,
+					//mediastreamlibrary: 'vxgwebsdk/media-stream-library.min.js',
+					mediastreamlibraryloaded: msl_loaded_callback,
+					boschbackwardaudio: 'vxgwebsdk/bosch',
+					//model3d: <custompathformodel.json>
+					watchdog: -1
+				});
+				$('#stop_channel').unbind().bind('click', function(){
+					player.stop();
+				});
+				$('#setsource_channel').unbind().bind('click', function(){
+					var channelElem = $('#channel');
+					var channel = channelElem.val();
+					var object = null;
+					if (!channel || channel === '') {
+						object = {};
+						var elem = $('#camurl');
+						var camurl = elem.val() || "82.200.1.86";
+
+						var user = "admin";
+						var password = "";
+						options = {};
+
+						options.disableZoomControl = true;
+						options.disableAudioControl = true;
+						options.disableMicControl = true;
+						options.disableSpeakerControl = true;
+						options.disableGetShot = true;
+						options.disableGetClip = true;
+						options.disablePTZ = true;
+
+						object.options = options;
+						object.url = camurl;
+					} else {
+						object = channel;
+					}
+					player.stop();
+					player.setSource(object);
+					// player.play();
+					try { window.sessionStorage.setItem(window.sessNameCh, channel) } catch(e) { }
+					
+					let starttime = new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000); //1 days back
+
+					$('#time_slider').attr('max', sec_since_2000);
+					$('#time_slider').attr('min', sec_since_2000 - (1*24*60*60));
+					$('#time_slider').attr('value', $('#time_slider').attr('max'));
+
+					$('#start_time').html(starttime.toLocaleString());
+					$('#stop_time').html(now.toLocaleString());
+					$('#select_time').html(now.toLocaleString());
+
+				});
+
+				$('#time_slider').on( "change", function() {
+					
+					let selecttime = new Date(t_2000.getTime() - (t_2000.getTimezoneOffset() - now.getTimezoneOffset())*60*1000 + this.value*1000);
+					$('#select_time').html(selecttime.toLocaleString());
+					
+					let rtsp_url_rec = $('#camurl').val() + '&rec=1&seek=' + this.value;	
+					player.stop();
+					var object = player.getSource()
+					object.url = rtsp_url_rec;		
+					player.setSource(object);
+				} );						
+			});
+		</script>
+	</head>
+
+<body>
+
+	<nav class="navbar navbar-expand-lg navbar-light navbar-black navbar-toggleable-md  fixed-top">
+		<div class="container">
+		  <a class="navbar-brand" href="#"></a>
+		  <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navigation-menu" aria-controls="navigation-menu" aria-expanded="false" aria-label="Toggle navigation">
+			<span class="navbar-toggler-icon"></span>
+		  </button>
+		  <div class="navbar-collapse collapse" id="navigation-menu">
+			<ul class="navbar-nav ml-auto">
+				<li class="nav-item"><a class="nav-link" href="index.html#sdk">VXGCloud SDK (3.3.33)</a></li>
+				<li class="nav-item"><a class="nav-link" href="index.html#examples">Examples</a></li>
+			</ul>
+		  </div>
+		</div>
+	</nav>
+
+<div class="container main-container">
+
+	<div class="row">
+		<div class="col-md-1"></div>
+		<div class="col-md-10 col-md-offset-1">
+			<h2>Local player</h2>
+			<p>
+				<a href="example_cloudstreamersdk1.html" id="prev_example" class="btn btn-link ">Previous example</a>
+				<a href="example_speaker.html" id="next_example" class="btn btn-link ">Next example</a>
+			</p>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-1"></div>
+		<div class="col-md-10 col-md-offset-1">
+			<div class="form-group">
+				<label for="cameraID">Camera address</label>
+				<div class="input-group">
+					<input id="camurl" type="text" class="form-control" placeholder="Enter camera url" value="ws://vxg3.ddns.net:80/rtsp_tunnel?h26x=4">
+					<!--input id="user" type="text" class="form-control" placeholder="Enter username" value="admin">
+					<input id="password" type="password" class="form-control" placeholder="Enter password" value=""-->
+				</div>
+				
+				<button id="setsource_channel" class="btn btn-default btn-vxg" disabled=true>setSource</button>
+				<button id="stop_channel" class="btn btn-default btn-vxg" disabled=true>Stop</button>
+				<span id="select_time" style="float:right">0</span>
+    			<input id="time_slider" type="range" min="0" max="0" value="0" style="width: 100%;">
+				<span id="start_time">0</span><span id="stop_time" style="float:right">0</span>				
+			</div>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-1"></div>
+		<div class="col-md-10 col-md-offset-1" style="height: 560px">
+			<div id="player1"></div>
+		</div>
+	</div>
+	</br>
+</div>
+</body>
+</html>

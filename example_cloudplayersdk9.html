@@ -1,0 +1,246 @@
+<html>
+	<head>
+		<title>VXGCloudSDK-Web 3.3.33</title>
+		<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+		
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		<meta http-equiv="x-ua-compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+		<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+		<link rel="stylesheet" id="font-style-css" href="https://fonts.googleapis.com/css?family=Montserrat%3A400%2C700&amp;ver=4.7.6" type="text/css" media="all">
+		<link rel="stylesheet" type="text/css" href="css/index.css">
+
+		<script type="text/javascript" src="js/jquery-3.1.0.min.js"></script>
+		<script type="text/javascript" src="js/popper.min.js"></script>
+		<script type="text/javascript" src="js/bootstrap.min.js"></script>
+
+		
+    <!-- automaticly include: begin -->
+    <link rel="stylesheet" type="text/css" href="vxgwebsdk/range-slider.min.css">
+    <link rel="stylesheet" type="text/css" href="vxgwebsdk/video-js.min.css">
+    <link rel="stylesheet" type="text/css" href="vxgwebsdk/CloudSDK.min.css">
+    <script type="text/javascript" src="vxgwebsdk/x2js.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/gl-matrix-min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/range-slider.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/moment.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/moment-timezone-with-data-1970-2030.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/vxg_cloud_player.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/video.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/webrtc-adapter-latest.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/CloudSDK.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/LocalPlayer.js"></script>
+    <!-- automaticly include: end -->
+
+		<script>
+			$(document).ready(function () {
+				
+				window.playerList = new CloudPlayerList('single-timeline', {timeline: true, calendar: true});
+				window.player1 = new CloudPlayerSDK('player1');
+				window.playerList.addPlayerToList(window.player1);
+				window.player2 = new CloudPlayerSDK('player2');
+				window.playerList.addPlayerToList(window.player2);
+				window.player3 = new CloudPlayerSDK('player3');
+				window.playerList.addPlayerToList(window.player3);
+				window.player4 = new CloudPlayerSDK('player4');
+				window.playerList.addPlayerToList(window.player4);
+				
+				const playChannelsPromise = (playerInfo) =>
+					new Promise ((resolve, reject) => {
+						var onlyPlaying = [];
+						playerInfo.forEach(pi => {
+							var channelElem = $('#' + pi.channelel);
+							var channel = channelElem.val();
+							if (!channel || channel === '') {
+								channelElem.css('background-color', 'red').focus();
+								setTimeout(function () {channelElem.css('background-color', '');},200);
+							} else {
+								pi.player.setSource(channel);
+								onlyPlaying.push(pi.player);
+							}
+						})
+						 resolve(onlyPlaying);
+					})
+				
+				$('#acc_token_toggle').click(function(){
+					$(".acc_token_input").toggleClass("hidden");	
+					$(".col-md-6").toggleClass("no_padding");					  
+				});
+
+				$('#play_channel_all').click(function(){
+					var allPlayerInfo = [
+						{"player": player1, "channelel": 'channel1'},
+						{"player": player2, "channelel": 'channel2'},
+						{"player": player3, "channelel": 'channel3'},
+						{"player": player4, "channelel": 'channel4'}]
+					playChannelsPromise(allPlayerInfo).then((onlyPlaying) => {
+							onlyPlaying.forEach(p => {
+								playerList.updatePlayerCamera(p);
+							})
+							playerList.synchronize();
+						})
+				});
+
+				setInterval(function() { showTimes(); }, 500);
+				
+			});
+			
+			function showTimes() {
+				var allTimes = [];
+				if (player1.getPosition().code === undefined) {
+					allTimes.push(player1.getPosition());
+					$('#time1').html("UTC time: " + CloudHelpers.readableFormatUTCTime(player1.getPosition()));
+				}
+				if (player2.getPosition().code === undefined) {
+					allTimes.push(player2.getPosition());
+					$('#time2').html("UTC time: " + CloudHelpers.readableFormatUTCTime(player2.getPosition()));
+				}
+				if (player3.getPosition().code === undefined) {
+					allTimes.push(player3.getPosition());
+					$('#time3').html("UTC time: " + CloudHelpers.readableFormatUTCTime(player3.getPosition()));
+				}
+				if (player4.getPosition().code === undefined) {
+					allTimes.push(player4.getPosition());
+					$('#time4').html("UTC time: " + CloudHelpers.readableFormatUTCTime(player4.getPosition()));
+				}
+
+				if (allTimes.length > 1) {
+					var maxDiff = Math.max(...allTimes) - Math.min(...allTimes);
+					$("#maxDiff").html(maxDiff/1000);
+				}
+			}
+		</script>
+
+		<style>
+			.hidden {
+			display: none;
+			}
+			.no_padding {
+			padding-left: 0px;
+			padding-right: 0px;
+			}
+			.input-group-btn {
+				display: none;
+			}
+		</style>
+	</head>
+
+<body>
+
+	<nav class="navbar navbar-expand-lg navbar-light navbar-black navbar-toggleable-md  fixed-top">
+		<div class="container">
+		  <a class="navbar-brand" href="#"></a>
+		  <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navigation-menu" aria-controls="navigation-menu" aria-expanded="false" aria-label="Toggle navigation">
+			<span class="navbar-toggler-icon"></span>
+		  </button>
+		  <div class="navbar-collapse collapse" id="navigation-menu">
+			<ul class="navbar-nav ml-auto">
+				<li class="nav-item"><a class="nav-link" href="index.html#sdk">VXGCloud SDK (3.3.33)</a></li>
+				<li class="nav-item"><a class="nav-link" href="index.html#examples">Examples</a></li>
+			</ul>
+		  </div>
+		</div>
+	</nav>
+
+<div class="container main-container">
+
+	<div class="row">
+		<div class="col-md-12">
+			<h2>Multi Player Joined Timeline</h2>
+			<p>
+				<a href="example_cloudplayersdk8.html" id="prev_example" class="btn btn-link ">Previous example</a>
+				<a href="example_cloudstreamersdk1.html" id="next_example" class="btn btn-link ">Next example</a>
+				<div class="form-group">
+				<label>Show/hide controls</label>
+				<button id="acc_token_toggle" class="btn btn-default btn-vxg">Toggle</button>
+				<label>Play all</label>
+				<button id="play_channel_all" class="btn btn-default btn-vxg">Play</button>
+			</div>
+			</p>
+		</div>
+	</div>
+
+	<div class="row">
+		<div id="single-timeline" class="col-12">
+			<div class="cloudplayer-controls-container single-timeline">
+				<div class="cloudplayer-timeline-container single-timeline">
+					<div class="cloudplayer-calendar-container single-timeline"></div>
+					<div class="cloudcameracalendar-content" id="single-timeline-calendar"></div>
+				</div>
+				<div class="cloudplayer-controls single-timeline">
+					<div class="cloudplayer-play" style="display: none"></div>
+					<div class="cloudplayer-stop" style="display: none"></div>
+					<div class="cloudplayer-pause hidden"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="row acc_token_input">
+		<p class="col-6 max-diff">Maximum player delay: <span id="maxDiff">--</span> seconds</p>
+	</div>
+
+	<div class="row acc_token_input">
+		<div class="col-md-6">
+			<div class="form-group">
+				<label for="cameraID">Player1: Access token</label>
+				<div class="input-group">
+					<input id="channel1" type="text" class="form-control" placeholder="Enter access token" value="">
+				</div>
+				<p id="time1">UTC time: nothing yet.</p>
+			</div>
+		</div>
+		<div class="col-md-6">
+			<div class="form-group">
+				<label for="cameraID">Player2: Access token</label>
+				<div class="input-group">
+					<input id="channel2" type="text" class="form-control" placeholder="Enter access token" value="">
+				</div>
+				<p id="time2">UTC time: nothing yet.</p>
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-6" style="height: 360px">
+			<div id="player1"></div>
+		</div>
+		<div class="col-md-6" style="height: 360px">
+			<div id="player2"></div>
+		</div>
+	</div>
+	
+	<div class="row acc_token_input">
+		<div class="col-md-6">
+			<div class="form-group">
+				<label for="cameraID">Player3: Access token</label>
+				<div class="input-group">
+					<input id="channel3" type="text" class="form-control" placeholder="Enter access token" value="">
+				</div>
+				<p id="time3">UTC time: nothing yet.</p>
+			</div>
+		</div>
+		<div class="col-md-6">
+			<div class="form-group">
+				<label for="cameraID">Player4: Access token</label>
+				<div class="input-group">
+					<input id="channel4" type="text" class="form-control" placeholder="Enter access token" value="">
+				</div>
+				<p id="time4">UTC time: nothing yet.</p>
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-6" style="height: 360px">
+			<div id="player3"></div>
+		</div>
+		<div class="col-md-6" style="height: 360px">
+			<div id="player4"></div>
+		</div>
+	</div>
+</div>
+<br><br>
+<br><br>
+</body>
+</html>

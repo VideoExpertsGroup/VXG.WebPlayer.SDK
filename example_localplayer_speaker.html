@@ -1,0 +1,268 @@
+<html>
+	<head>
+		<title>VXGCloudSDK-Web 3.3.33</title>
+		<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		<meta http-equiv="x-ua-compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+		<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+		<link rel="stylesheet" id="font-style-css" href="https://fonts.googleapis.com/css?family=Montserrat%3A400%2C700&amp;ver=4.7.6" type="text/css" media="all">
+		<link rel="stylesheet" type="text/css" href="css/index.css">
+
+		<script type="text/javascript" src="js/jquery-3.1.0.min.js"></script>
+		<script type="text/javascript" src="js/popper.min.js"></script>
+		<script type="text/javascript" src="js/bootstrap.min.js"></script>
+
+		
+    <!-- automaticly include: begin -->
+    <link rel="stylesheet" type="text/css" href="vxgwebsdk/range-slider.min.css">
+    <link rel="stylesheet" type="text/css" href="vxgwebsdk/video-js.min.css">
+    <link rel="stylesheet" type="text/css" href="vxgwebsdk/CloudSDK.min.css">
+    <script type="text/javascript" src="vxgwebsdk/x2js.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/gl-matrix-min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/range-slider.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/moment.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/moment-timezone-with-data-1970-2030.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/vxg_cloud_player.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/video.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/webrtc-adapter-latest.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/CloudSDK.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/LocalPlayer.js"></script>
+    <!-- automaticly include: end -->
+
+
+		<script>
+			window.sessNameCh_check = 'example_speaker_ch_check';
+			window.sessNameCh_ab = 'example_speaker_ch_ab';
+
+			/*
+			transaction function that controls audio-player-backwardAudio
+			*/
+			function sendBackwardAudio (isStart) {
+				if (window.player_ab) {
+					if (isStart === true){
+						window.player_ab.local_player.startBackwardAudio();
+					} else {
+						window.player_ab.local_player.stopBackwardAudio();
+					}
+				}
+			}
+
+			/*
+			transaction function that provide back-information about backwardAudio-status from audio-player to check-player
+			*/
+			function backwardAudioStatus(status) {
+				console.log(status);
+				if (window.player_check){
+					window.player_check.local_player.backwardAudioStatus(status);
+				}
+			}
+
+			/*
+			transaction function that controls audio-player-volume
+			*/
+			function setVolume(val) {
+				if (window.player_ab) {
+					window.player_ab.local_player.volume(val);
+				}
+			}
+
+			/*
+			transaction function that controls audio-player-mute
+			*/
+			function setMute() {
+				if (window.player_ab) {
+					window.player_ab.local_player.mute();
+				}
+			}
+
+			/*
+			fucntion that check that mediastreamlibrary is loaded
+			*/
+			function msl_loaded_callback() {
+				$('#play_channel')[0].disabled = false;
+				$('#stop_channel')[0].disabled = false;
+			}
+
+			$(document).ready(function () {
+				try {
+					var sChannel_check = window.sessionStorage.getItem(window.sessNameCh_check);
+					$('#channel_check').val(sChannel_check !== null ? sChannel_check : '');
+				} catch (e) {}
+
+				try {
+					var sChannel_ab = window.sessionStorage.getItem(window.sessNameCh_ab);
+					$('#channel_ab').val(sChannel_ab !== null ? sChannel_ab : '');
+				} catch (e) {}
+
+				/*
+				Check-player: visible player with video, but w/o audio. Check player controls audio from another player
+				*/
+				window.player_check_options = {
+					autohide: 3000,
+					timeline: true,
+					calendar: true,
+					disableZoomControl: false,
+					disableAudioControl: false,
+					disableMicControl: false,
+					disableSpeakerControl: false,
+					disableGetShot: false,
+					disableGetClip: false,
+					mediastreamlibrary: 'vxgwebsdk/media-stream-library.min.js',
+					mediastreamlibraryloaded: msl_loaded_callback,
+					boschbackwardaudio: 'vxgwebsdk/bosch',
+					//model3d: <custompathformodel.json>
+					watchdog: -1
+				};
+				window.player_check = new CloudPlayerSDK('player_check', window.player_check_options );
+
+				/*
+				Audio-player: invisible player, that supports audio. Under control check-player.
+				*/
+				window.player_ab_options = {
+					autohide: 3000,
+					timeline: true,
+					calendar: true,
+					disableZoomControl: false,
+					disableAudioControl: false,
+					disableMicControl: false,
+					disableSpeakerControl: false,
+					disableZoomControl: false,
+					disableMicControl: false,
+					disableGetShot: false,
+					disableGetClip: false,
+					mediastreamlibrary: 'vxgwebsdk/media-stream-library.min.js',
+					mediastreamlibraryloaded: msl_loaded_callback,
+					boschbackwardaudio: 'vxgwebsdk/bosch',
+					//model3d: <custompathformodel.json>
+					watchdog: 3
+				}
+				window.player_ab = new CloudPlayerSDK('player_ab', window.player_ab_options);
+
+				$('#play_channel').unbind().bind('click', function(){
+
+					var channelElem = $('#channel_check');
+					var channel_check = channelElem.val();
+					var obj_check = {};
+					obj_check.url = channel_check;
+
+					channelElem = $('#channel_ab');
+					var channel_ab = channelElem.val();
+					var obj_ab = {};
+					obj_ab.url = channel_ab;
+
+					if (channel_ab) {
+						/*
+						If there is audio-only player, set to check-player external callbacks (volume, mute, sendBackwardAudio) to control audio-player
+						*/
+						window.player_check_options.ext_sendBackwardAudio = sendBackwardAudio.bind();
+						window.player_check_options.ext_setVolume = setVolume.bind();
+						window.player_check_options.ext_setMute = setMute.bind();
+						/*
+						Audio-only player should provide information about backward-audio status by this callback
+						*/
+						window.player_ab_options.ext_backwardAudioStatus = backwardAudioStatus.bind();
+
+						setTimeout(function(){
+							player_ab.setSource(obj_ab);
+							player_ab.play();
+						}, 1000);
+					} else {
+						/*
+						Otherwise, unset external callbacks
+						*/
+						window.player_check_options.ext_sendBackwardAudio = undefined;
+						window.player_check_options.ext_setVolume = undefined;
+						window.player_check_options.ext_setMute = undefined;
+
+						player_ab.stop();
+					}
+					player_check.setSource(obj_check);
+
+					try {
+					    window.sessionStorage.setItem(window.sessNameCh_check, channel_check)
+					} catch(e) { }
+					try {
+					    window.sessionStorage.setItem(window.sessNameCh_ab, channel_ab)
+					} catch(e) { }
+				});
+
+				$('#stop_channel').unbind().bind('click', function(){
+					window.player_check.stop();
+					window.player_ab.stop();
+				});
+
+			});
+		</script>
+	</head>
+
+<body>
+
+	<nav class="navbar navbar-expand-lg navbar-light navbar-black navbar-toggleable-md  fixed-top">
+		<div class="container">
+		  <a class="navbar-brand" href="#"></a>
+		  <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navigation-menu" aria-controls="navigation-menu" aria-expanded="false" aria-label="Toggle navigation">
+			<span class="navbar-toggler-icon"></span>
+		  </button>
+		  <div class="navbar-collapse collapse" id="navigation-menu">
+			<ul class="navbar-nav ml-auto">
+				<li class="nav-item"><a class="nav-link" href="index.html#sdk">VXGCloud SDK (3.1.21)</a></li>
+				<li class="nav-item"><a class="nav-link" href="index.html#examples">Examples</a></li>
+			</ul>
+		  </div>
+		</div>
+	</nav>
+
+<div class="container main-container">
+
+	<div class="row">
+		<div class="col-md-1"></div>
+		<div class="col-md-10 col-md-offset-1">
+			<h2>Speaker camera with check one(LocalPlayer)</h2>
+			<p>
+				<a href="example_speaker.html" id="prev_example" class="btn btn-link ">Previous example</a>
+				<a href="" id="next_example" class="btn btn-link hide">Next example</a>
+			</p>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-1"></div>
+		<div class="col-md-10 col-md-offset-1">
+			<div class="form-group">
+				<label for="cameraID">Access token</label>
+				<div class="input-group">
+					<input id="channel_ab" type="text" class="form-control" placeholder="Enter camera url for speaker camera" value="http://82.200.1.86:8180/rtsp_tunnel?line=1&inst=1&enableaudio=1&aud=1">
+				</div>
+				<div class="input-group">
+					<input id="channel_check" type="text" class="form-control" placeholder="Enter camera url for check camera" value="http://82.200.1.86:11380/rtsp_tunnel?line=1&inst=1&enableaudio=1&aud=1">
+					<span class="input-group-btn">
+						<button id="play_channel" class="btn btn-default btn-vxg" disabled=true>Play</button>
+						<button id="stop_channel" class="btn btn-default btn-vxg" disabled=true>Stop</button>
+					</span>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-1"></div>
+		<div class="col-md-10 col-md-offset-1" style="height: 520px">
+			<!-- Player with video but no audio, that controls another only-audio player -->
+			<div id="player_check"></div>
+		</div>
+		<!-- Only-audio player, that controled by only-video player (player-check), has heigth:0 so invisible -->
+		<div id="player_ab" style="/*height: 300px;*/"></div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-1"></div>
+		<div class="col-md-10 col-md-offset-1" style="height: 50px">
+		</div>
+	</div>
+
+</div>
+</body>
+</html>

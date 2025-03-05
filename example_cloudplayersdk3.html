@@ -1,8 +1,8 @@
 <html>
 	<head>
-		<title>VXGCloudSDK-Web 3.1.9</title>
+		<title>VXGCloudSDK-Web 3.3.33</title>
 		<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
-		
+
 		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
 		<meta http-equiv="x-ua-compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
@@ -16,26 +16,205 @@
 		<script type="text/javascript" src="js/bootstrap.min.js"></script>
 
 		
+		
     <!-- automaticly include: begin -->
+    <link rel="stylesheet" type="text/css" href="vxgwebsdk/range-slider.min.css">
     <link rel="stylesheet" type="text/css" href="vxgwebsdk/video-js.min.css">
     <link rel="stylesheet" type="text/css" href="vxgwebsdk/CloudSDK.min.css">
+    <script type="text/javascript" src="vxgwebsdk/x2js.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/gl-matrix-min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/range-slider.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/moment.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/moment-timezone-with-data-1970-2030.min.js"></script>
+    <script type="text/javascript" src="vxgwebsdk/vxg_cloud_player.js"></script>
     <script type="text/javascript" src="vxgwebsdk/video.min.js"></script>
     <script type="text/javascript" src="vxgwebsdk/webrtc-adapter-latest.js"></script>
     <script type="text/javascript" src="vxgwebsdk/CloudSDK.min.js"></script>
-    <script type="text/javascript">
-	       CloudSDK.flashswf = "vxgwebsdk/video-js-by-vxg-buff200.swf";
-    </script>
+    <script type="text/javascript" src="vxgwebsdk/LocalPlayer.js"></script>
     <!-- automaticly include: end -->
 
-		<script>
-			$(document).ready(function () {
-				window.player1 = new CloudPlayerSDK('player1');
-				window.player2 = new CloudPlayerSDK('player2');
-				window.player3 = new CloudPlayerSDK('player3');
-				window.player4 = new CloudPlayerSDK('player4');
 
-				function play_channel(player, channelel){
-					var channelElem = $('#' + channelel);
+<style>
+    /* Container for the row */
+    .flex-container {
+      flex-wrap: wrap; /* Ensures items wrap to the next row when space is filled */
+      gap: 10px; /* Space between divs */
+    }
+
+    /* Individual div styling */
+    .flex-item {
+      background-color: #f0f0f0;
+      border: 1px solid #ccc;
+      padding: 0px;
+	  height: 160px;
+      width: 320px; /* Adjust width as needed */
+      text-align: center;
+    }
+
+	body {
+		justify-content: center;
+		align-items: center;
+		min-height: 100vh;
+		margin: 0;
+		background-color: #f0f0f0;
+	}
+	#grid-container {
+		display: grid;
+		grid-template-columns: repeat(4, 320px);
+		grid-template-rows: repeat(4, 160px);
+		width: 160px;
+		height: 320px;
+		border: 2px solid #333;
+	}
+	.grid-cell {
+		width: 320px;
+		height: 160px;
+		background-color: #ccc;
+		border: 1px solid #999;
+	}
+
+
+  </style>
+		<script>
+			window.sessNameCh = 'example_cloudplayersdk2_ch';
+
+			var mainContainer ;
+			var id;
+			var id_ = 0;
+			var newDiv;
+			const myMap = new Map();
+
+
+			function GetFreeCell()
+			{
+				const gridCells = document.querySelectorAll('.grid-cell');	
+
+				for (let index = 0; index < gridCells.length; index++) {
+					const cell = gridCells[index];
+					console.log(`Cell ${index + 1}:`, cell);
+
+					// Check if the cell does not have the 'player' attribute
+					if (!cell.PlayerDiv) {
+						console.log(`Free cell found at index ${index + 1}`);
+						return cell; // Return the first free cell
+					}
+				}
+				return null;
+			}
+
+			function GetPlayer()
+			{
+				const gridCells = document.querySelectorAll('.grid-cell');	
+
+				for (let index = 0; index < gridCells.length; index++) {
+					const cell = gridCells[index];
+					console.log(`Cell ${index + 1}:`, cell);
+
+					// Check if the cell does not have the 'player' attribute
+					if (cell.PlayerDiv) {
+						console.log(`Free cell found at index ${index + 1}`);
+						return cell; // Return the first free cell
+					}
+				}
+				return null;
+			}
+
+			function CreateGrid()
+				{
+					const gridContainer = document.getElementById('grid-container');
+
+					// Generate 16x16 grid
+					for (let i = 0; i < 4 * 4; i++) {
+						const cell = document.createElement('div');
+						cell.classList.add('grid-cell');
+						gridContainer.appendChild(cell);
+					}	
+				}
+
+			
+
+			function createPlayer(token, recording, main_div)
+			{
+
+					// Create a new div element
+					newDiv = document.createElement("span");
+
+					// Add desired classes to the new div element		
+					newDiv.className = "flex-container flex-item";
+
+					// Set a unique ID for the new div (optional, e.g., "player8")
+					newDiv.id = `player${id_}`;
+					id_ = id_ + 1;	
+
+
+
+					main_div.appendChild(newDiv);
+
+
+					if (recording)
+					window.player = new CloudPlayerSDK(newDiv.id , {
+					autohide: -1,
+					timeline: false,
+					calendar: false,
+					calendar: false,
+					live_only: true,
+					hideTime:true,
+					disableGetClip:true,
+					disableGetShot:true,
+					disableSdCard:true,
+					disableBackwardAudio:true,
+					loaderTimeout: 15000, 
+					mute:true,
+					});
+					else
+					window.player = new CloudPlayerSDK(newDiv.id , {
+					loaderTimeout: 15000,		
+					autohide: 30000,
+					timeline: true,
+					calendar: true,
+					hideTime:true,
+					disableGetClip:true,
+					disableGetShot:true,
+					disableSdCard:true,
+					disableBackwardAudio:true,
+					mute:true,
+
+					});
+
+					player.setSource(token);
+					player.play();
+
+
+					newDiv.player = player;
+					main_div.PlayerDiv = newDiv;
+					
+			}
+
+			function destroyPlayer(divPlayer)
+			{
+					
+					divPlayer.player.stop("");
+					divPlayer.player.destroy();
+
+					playerToRemove = document.getElementById(divPlayer.id);
+					if (playerToRemove) {
+ 					   // Remove the child
+    					divPlayer.removeChild(playerToRemove);
+					}
+
+
+			}
+
+
+			$(document).ready(function () {
+				try {  var sChannel = window.sessionStorage.getItem(window.sessNameCh);
+					$('#channel').val(sChannel !== null ? sChannel : ''); } catch (e) {}
+
+
+				CreateGrid();
+
+				$('#play_channel').unbind().bind('click', function(){
+					var channelElem = $('#channel');
 					var channel = channelElem.val();
 					if (!channel || channel === '') {
 						channelElem.css('background-color', 'red').focus();
@@ -43,21 +222,23 @@
 						return;
 					}
 
-					// player.stop();
-					player.setSource(channel);
-				}
+					const checkbox = document.getElementById("recording");
+					
+					cell = GetFreeCell();
+					createPlayer(channel,checkbox.checked,cell);
 
-				$('#play_channel1').unbind().bind('click', function(){
-					play_channel(player1, 'channel1');
+
+					try { window.sessionStorage.setItem(window.sessNameCh, channel) } catch(e) { }
+
+					//myMap.appendChild
 				});
-				$('#play_channel2').unbind().bind('click', function(){
-					play_channel(player2, 'channel2');
-				});
-				$('#play_channel3').unbind().bind('click', function(){
-					play_channel(player3, 'channel3');
-				});
-				$('#play_channel4').unbind().bind('click', function(){
-					play_channel(player4, 'channel4');
+
+				$('#close_channel').unbind().bind('click', function(){
+
+					cell = GetPlayer();	
+					destroyPlayer(cell.PlayerDiv);
+					cell.PlayerDiv = null;
+					
 				});
 			});
 		</script>
@@ -73,8 +254,12 @@
 		  </button>
 		  <div class="navbar-collapse collapse" id="navigation-menu">
 			<ul class="navbar-nav ml-auto">
-				<li class="nav-item"><a class="nav-link" href="index.html#sdk">VXGCloud SDK (3.1.9)</a></li>
-				<li class="nav-item"><a class="nav-link" href="index.html#examples">Examples</a></li>
+				<li class="nav-item"><a class="nav-link" href="./#sdk">VXGCloud SDK DEBUG</a></li>
+				<!-- li class="nav-item"><a class="nav-link" href="./#docs">Docs</a></li -->
+				<li class="nav-item"><a class="nav-link" href="./#examples">Examples</a></li>
+				<li class="nav-item"><a class="nav-link" href="./#codesnippets">Code Snippets</a></li>
+				<li class="nav-item"><a class="nav-link" href="./#support">Support</a></li>
+				<li class="nav-item"><a class="nav-link" href="./#changelog">Change Log</a></li>
 			</ul>
 		  </div>
 		</div>
@@ -83,84 +268,42 @@
 <div class="container main-container">
 
 	<div class="row">
-		<div class="col-md-12">
+		<div class="col-md-1"></div>
+		<div class="col-md-10 col-md-offset-1">
 			<h2>Multi players</h2>
 			<p>
-				<a href="example_cloudplayersdk2.html" id="prev_example" class="btn btn-link ">Previous example</a>
+				<a href="example_multistreamswitch.html" id="prev_example" class="btn btn-link ">Previous example</a>
 				<a href="example_cloudplayersdk4.html" id="next_example" class="btn btn-link ">Next example</a>
 			</p>
 		</div>
 	</div>
 
 	<div class="row">
-		<div class="col-md-6">
+		<div class="col-md-1"></div>
+		<div class="col-md-10 col-md-offset-1">
 			<div class="form-group">
-				<label for="cameraID">Player1: Access token</label>
+				<label for="cameraID">Access token</label>
 				<div class="input-group">
-					<input id="channel1" type="text" class="form-control" placeholder="Enter access token" value="">
+					<input id="channel" type="text" class="form-control" placeholder="Enter access token" value="">
 					<span class="input-group-btn">
-						<button id="play_channel1" class="btn btn-default btn-vxg">Play</button>
+						<input type="checkbox" checked id="recording" class="btn btn-default btn-vxg">
+						<button id="play_channel" class="btn btn-default btn-vxg">Play</button>
+						<button id="close_channel" class="btn btn-default btn-vxg">Close</button>
 					</span>
 				</div>
 			</div>
-		</div>
-		<div class="col-md-6">
-			<div class="form-group">
-				<label for="cameraID">Player2: Access token</label>
-				<div class="input-group">
-					<input id="channel2" type="text" class="form-control" placeholder="Enter access token" value="">
-					<span class="input-group-btn">
-						<button id="play_channel2" class="btn btn-default btn-vxg">Play</button>
-					</span>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<div class="row">
-		<div class="col-md-6" style="height: 360px">
-			<div id="player1"></div>
-		</div>
-		<div class="col-md-6" style="height: 360px">
-			<div id="player2"></div>
 		</div>
 	</div>
 	
-	<div class="row">
-		<div class="col-md-6">
-			<div class="form-group">
-				<label for="cameraID">Player3: Access token</label>
-				<div class="input-group">
-					<input id="channel3" type="text" class="form-control" placeholder="Enter access token" value="">
-					<span class="input-group-btn">
-						<button id="play_channel3" class="btn btn-default btn-vxg">Play</button>
-					</span>
-				</div>
-			</div>
-		</div>
-		<div class="col-md-6">
-			<div class="form-group">
-				<label for="cameraID">Player4: Access token</label>
-				<div class="input-group">
-					<input id="channel4" type="text" class="form-control" placeholder="Enter access token" value="">
-					<span class="input-group-btn">
-						<button id="play_channel4" class="btn btn-default btn-vxg">Play</button>
-					</span>
-				</div>
-			</div>
-		</div>
-	</div>
+	<div id="grid-container"></div>
+	
 
-	<div class="row">
-		<div class="col-md-6" style="height: 360px">
-			<div id="player3"></div>
-		</div>
-		<div class="col-md-6" style="height: 360px">
-			<div id="player4"></div>
-		</div>
-	</div>
 </div>
-<br><br>
-<br><br>
+
+	
+	<span  id="main" >
+
+	</span>
+
 </body>
 </html>
